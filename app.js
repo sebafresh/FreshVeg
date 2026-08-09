@@ -475,8 +475,12 @@ function showCheckout() {
 
 async function initSebaMaps() {
   try {
-    const [{ Map, Marker }, { PlaceAutocompleteElement }, { Route }] = await Promise.all([
+    // NOTE: Marker belongs to the "marker" library, NOT "maps".
+    // Pulling it from "maps" leaves Marker undefined and throws as
+    // soon as `new Marker(...)` runs — this was the actual bug.
+    const [{ Map }, { Marker }, { PlaceAutocompleteElement }, { Route }] = await Promise.all([
       google.maps.importLibrary("maps"),
+      google.maps.importLibrary("marker"),
       google.maps.importLibrary("places"),
       google.maps.importLibrary("routes")
     ]);
@@ -491,13 +495,34 @@ async function initSebaMaps() {
 }
 window.initSebaMaps = initSebaMaps;
 
+// Google calls this automatically if the API key is missing, invalid,
+// unbilled, or blocked by referrer/API restrictions — the #1 real-world
+// reason a map "doesn't load" with no visible error.
+window.gm_authFailure = function () {
+  const status = document.getElementById("locationStatus");
+  if (status) {
+    status.innerHTML = `<span class="bad">Google Maps authentication failed. Check: the API key in index.html is correct (not the placeholder), Maps JavaScript API + Places API (New) + Routes API are all enabled, billing is active, and the key's HTTP referrer restriction allows this domain.</span>`;
+  }
+  console.error("[SebaFresh] gm_authFailure — invalid/restricted Google Maps API key. See index.html's map script tag.");
+};
+
 function validStoreLocation() {
   return Number.isFinite(CONFIG.storeLocation.lat) && Number.isFinite(CONFIG.storeLocation.lng) &&
     !(CONFIG.storeLocation.lat === 0 && CONFIG.storeLocation.lng === 0);
 }
 
 function initMapIfPossible() {
-  if (!window.SebaMapLib || map || !validStoreLocation()) return;
+  if (!window.SebaMapLib || map) return;
+  if (!validStoreLocation()) {
+    // Previously this just returned with no map and no explanation.
+    // CONFIG.storeLocation is still {lat:0,lng:0} until you set the
+    // real Seba Fresh coordinates — surface that clearly instead of
+    // leaving the map area blank with no clue why.
+    const status = document.getElementById("locationStatus");
+    if (status) status.innerHTML = `<span class="bad">Map disabled: set the real Seba Fresh coordinates in CONFIG.storeLocation (app.js) — it's currently 0, 0.</span>`;
+    console.warn("[SebaFresh] CONFIG.storeLocation is still the 0,0 placeholder — map will not initialize until it's set.");
+    return;
+  }
   const { Map, Marker, PlaceAutocompleteElement } = window.SebaMapLib;
   const center = { lat: CONFIG.storeLocation.lat, lng: CONFIG.storeLocation.lng };
   map = new Map(document.getElementById("map"), { center, zoom: 13, mapTypeControl: false, streetViewControl: false, fullscreenControl: true, mapId: "DEMO_MAP_ID" });
