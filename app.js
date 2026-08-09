@@ -17,6 +17,16 @@ const CONFIG = {
   globalWeight: { qty: 500, unit: "g" },
   globalVolume: { qty: 1, unit: "L" },
 
+  // ---------------------------------------------------------------
+  // +/- STEP AMOUNTS. g/ml and kg/L are different scales and must
+  // NEVER share one step number:
+  //   - g / ml  -> steps by the product's own step_qty (Sheet column),
+  //                falls back to DEFAULT_BASE_STEP if not set.
+  //   - kg / L  -> always steps by a whole 1 kg / 1 L.
+  // ---------------------------------------------------------------
+  DEFAULT_BASE_STEP: 250, // grams or ml, used if a product has no step_qty
+  DEFAULT_BASE_MIN: 250,  // grams or ml, used if a product has no min_qty
+
   // REQUIRED: replace with the real Seba Fresh base/store coordinates.
   // These coordinates are used for the driving-distance calculation.
   storeLocation: { lat: 0, lng: 0, label: "Seba Fresh" },
@@ -26,7 +36,11 @@ const CONFIG = {
 };
 
 let products = [];
+
+// Cart: ONE entry per product => { productId, qty, unit }
+// Never store duplicate lines for the same product.
 let cart = [];
+
 let selectedCategory = "All";
 let map = null;
 let placeAutocomplete = null;
@@ -39,7 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("year").textContent = new Date().getFullYear();
   bindUI();
   loadProducts();
-  showPageFromLinks();
 });
 
 function bindUI() {
@@ -50,6 +63,18 @@ function bindUI() {
   document.getElementById("checkoutBtn").addEventListener("click", showCheckout);
   document.getElementById("whatsappBtn").addEventListener("click", sendWhatsAppOrder);
   document.getElementById("closeModal").addEventListener("click", () => document.getElementById("pageModal").classList.remove("open"));
+
+  // Close the info modal by clicking its dark backdrop too, not just the × button.
+  document.getElementById("pageModal").addEventListener("click", (e) => {
+    if (e.target.id === "pageModal") document.getElementById("pageModal").classList.remove("open");
+  });
+
+  // Escape key closes whichever overlay is open.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    document.getElementById("pageModal").classList.remove("open");
+    closeCart();
+  });
 
   document.querySelectorAll("[data-page]").forEach(a => {
     a.addEventListener("click", e => {
@@ -187,41 +212,28 @@ function renderLatest() {
   bindProductCards();
 }
 
-function productCard(p) {
-  const defaults = getDefaultQuantity(p);
-  const units = p.quantityType === "volume" ? ["ml","L"] : ["g","kg"];
-  const initialUnit = defaults.unit;
-  const initialQty = defaults.qty;
-  const img = p.image
-    ? `<img loading="lazy" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emoji-img" style="display:none">🥬</span>`
-    : `<span class="emoji-img">${vegetableEmoji(p.name)}</span>`;
-  return `<article class="product" data-product="${escapeAttr(p.id)}">
-    <div class="product-img">${img}</div>
-    <div class="product-body">
-      <div class="product-category">${escapeHTML(p.category)}</div>
-      <h3>${escapeHTML(p.name)}</h3>
-      <div class="product-desc">${escapeHTML(p.description)}</div>
-      <div class="price">₹${money(p.price)} <small>/ ${escapeHTML(p.priceUnit)}</small></div>
-      <div class="qty-line">
-        <input class="qty-input" type="number" min="${p.minQty || 1}" step="${p.step || 1}" value="${initialQty}" aria-label="Quantity">
-        <select class="unit-select" aria-label="Unit">${units.map(u => `<option value="${u}" ${u === initialUnit ? "selected" : ""}>${u}</option>`).join("")}</select>
-      </div>
-      <button class="add" data-add="${escapeAttr(p.id)}">Add to cart</button>
-    </div>
-  </article>`;
+// ---------------------------------------------------------------
+// QUANTITY / UNIT RULES
+// ---------------------------------------------------------------
+
+const UNIT_FACTOR = { g: 1, kg: 1000, ml: 1, L: 1000 };
+
+function toBaseQty(qty, unit) { return qty * (UNIT_FACTOR[unit] || 1); }
+
+/**
+ * Step size for +/-. g/ml step by the product's own step_qty (Sheet
+ * column) because 250g vs 50g makes sense per product. kg/L always
+ * step by a whole unit (1 kg, 1 L) so the fine unit doesn't jump
+ * around when someone is ordering by the big unit.
+ */
+function stepFor(p, unit) {
+  if (unit === "kg" || unit === "L") return 1;
+  return p.step || CONFIG.DEFAULT_BASE_STEP;
 }
 
-function bindProductCards() {
-  document.querySelectorAll("[data-add]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const card = btn.closest(".product");
-      const p = products.find(x => x.id === btn.dataset.add);
-      const qty = Number(card.querySelector(".qty-input").value);
-      const unit = card.querySelector(".unit-select").value;
-      if (!p || !qty || qty <= 0) return toast("Enter a valid quantity.");
-      addToCart(p, qty, unit);
-    });
-  });
+function minFor(p, unit) {
+  if (unit === "kg" || unit === "L") return 1;
+  return p.minQty || p.step || CONFIG.DEFAULT_BASE_MIN;
 }
 
 function getDefaultQuantity(p) {
@@ -229,61 +241,202 @@ function getDefaultQuantity(p) {
   return p.quantityType === "volume" ? CONFIG.globalVolume : CONFIG.globalWeight;
 }
 
+/** Price for a given qty+unit against a product's per-price_unit price. */
+function lineTotal(p, qty, unit) {
+  const base = toBaseQty(qty, unit);
+  const priceUnitBase = UNIT_FACTOR[normalizeUnit(p.priceUnit)] || 1;
+  const raw = (base / priceUnitBase) * p.price;
+  return Math.round(raw * 100) / 100;
+}
+
+function cartItemFor(productId) { return cart.find(i => i.productId === productId) || null; }
+
+// ---------------------------------------------------------------
+// PRODUCT CARD
+// ---------------------------------------------------------------
+
+function productCard(p) {
+  const inCart = cartItemFor(p.id);
+  const units = p.quantityType === "volume" ? ["ml", "L"] : ["g", "kg"];
+  const defaults = getDefaultQuantity(p);
+
+  const img = p.image
+    ? `<img loading="lazy" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emoji-img" style="display:none">🥬</span>`
+    : `<span class="emoji-img">${vegetableEmoji(p.name)}</span>`;
+
+  let qtyBlock;
+  if (inCart) {
+    // Already in the cart: show a stepper on the CURRENT unit, plus a unit
+    // select. Changing that unit removes the item and resets qty to 0 —
+    // it never silently converts the number (see changeUnit()).
+    qtyBlock = `
+      <div class="in-cart-row"><span class="in-cart-badge">✓ In cart — ₹${money(lineTotal(p, inCart.qty, inCart.unit))}</span>
+        <button class="remove-link" data-remove="${escapeAttr(p.id)}">Remove</button>
+      </div>
+      <div class="stepper">
+        <button type="button" data-dec="${escapeAttr(p.id)}" aria-label="Decrease quantity">−</button>
+        <span class="qty-val">${formatNumber(inCart.qty)}</span>
+        <select data-unit-change="${escapeAttr(p.id)}" aria-label="Unit">
+          ${units.map(u => `<option value="${u}" ${u === inCart.unit ? "selected" : ""}>${u}</option>`).join("")}
+        </select>
+        <button type="button" data-inc="${escapeAttr(p.id)}" aria-label="Increase quantity">+</button>
+      </div>`;
+  } else {
+    // Not yet in the cart: quantity starts at 0 and is NEVER added
+    // automatically — the customer must type a quantity and press
+    // "Add to cart" themselves.
+    qtyBlock = `
+      <div class="qty-line">
+        <input class="qty-input" type="number" min="0" step="${stepFor(p, defaults.unit)}" value="0" data-qty-field="${escapeAttr(p.id)}" aria-label="Quantity">
+        <select class="unit-select" data-unit-pre="${escapeAttr(p.id)}" aria-label="Unit">
+          ${units.map(u => `<option value="${u}" ${u === defaults.unit ? "selected" : ""}>${u}</option>`).join("")}
+        </select>
+      </div>
+      <button class="add" data-add="${escapeAttr(p.id)}">Add to cart</button>`;
+  }
+
+  return `<article class="product" data-product="${escapeAttr(p.id)}">
+    <div class="product-img">${img}</div>
+    <div class="product-body">
+      <div class="product-category">${escapeHTML(p.category)}</div>
+      <h3>${escapeHTML(p.name)}</h3>
+      <div class="product-desc">${escapeHTML(p.description)}</div>
+      <div class="price">₹${money(p.price)} <small>/ ${escapeHTML(p.priceUnit)}</small></div>
+      ${qtyBlock}
+    </div>
+  </article>`;
+}
+
+function bindProductCards() {
+  // Add to cart
+  document.querySelectorAll("[data-add]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const p = products.find(x => x.id === btn.dataset.add);
+      const card = btn.closest(".product");
+      const unit = card.querySelector("[data-unit-pre]").value;
+      const qty = Number(card.querySelector("[data-qty-field]").value);
+      addToCart(p, qty, unit);
+    });
+  });
+
+  // Pre-add unit change: just updates the input's step so g/kg (or ml/L)
+  // never share one increment. Nothing is in the cart yet, so no reset needed.
+  document.querySelectorAll("[data-unit-pre]").forEach(sel => {
+    sel.addEventListener("change", () => {
+      const p = products.find(x => x.id === sel.dataset.unitPre);
+      const card = sel.closest(".product");
+      const field = card.querySelector("[data-qty-field]");
+      field.step = stepFor(p, sel.value);
+      field.value = "0";
+    });
+  });
+
+  // +/- on an item already in the cart
+  document.querySelectorAll("[data-inc]").forEach(btn => btn.addEventListener("click", () => changeQty(btn.dataset.inc, 1)));
+  document.querySelectorAll("[data-dec]").forEach(btn => btn.addEventListener("click", () => changeQty(btn.dataset.dec, -1)));
+  document.querySelectorAll("[data-remove]").forEach(btn => btn.addEventListener("click", () => removeFromCart(btn.dataset.remove)));
+
+  // MANDATORY UNIT-CHANGE RULE: changing the unit of an item already in the
+  // cart removes it and resets quantity to 0 — never converts the number.
+  document.querySelectorAll("[data-unit-change]").forEach(sel => {
+    sel.addEventListener("change", () => changeUnit(sel.dataset.unitChange));
+  });
+}
+
+// ---------------------------------------------------------------
+// CART OPERATIONS
+// ---------------------------------------------------------------
+
 function addToCart(p, qty, unit) {
-  const baseQty = toBaseQuantity(qty, unit);
-  const existing = cart.find(i => i.productId === p.id && i.baseQty === baseQty);
-  if (existing) existing.count++;
-  else cart.push({ productId: p.id, baseQty, count: 1 });
+  const min = minFor(p, unit);
+  if (!qty || qty < min) return toast(`Minimum quantity is ${min} ${unit}`);
+
+  const existing = cartItemFor(p.id);
+  if (existing) { existing.qty = qty; existing.unit = unit; }
+  else cart.push({ productId: p.id, qty, unit });
+
+  renderProducts();
+  renderLatest();
   renderCart();
   toast(`${p.name} added to cart`);
 }
 
-function toBaseQuantity(qty, unit) {
-  return unit === "kg" ? qty * 1000 : unit === "L" ? qty * 1000 : qty;
-}
-function fromBaseQuantity(base, unit) {
-  return unit === "kg" || unit === "L" ? base / 1000 : base;
-}
-function displayQuantity(base, type) {
-  const kgOrL = type === "volume" ? "L" : "kg";
-  const small = type === "volume" ? "ml" : "g";
-  if (base >= 1000) return `${formatNumber(base / 1000)} ${kgOrL}`;
-  return `${formatNumber(base)} ${small}`;
-}
-function pricingQuantity(base, priceUnit) {
-  const u = normalizeUnit(priceUnit);
-  return (u === "kg" || u === "L") ? base / 1000 : base;
+function removeFromCart(productId) {
+  cart = cart.filter(i => i.productId !== productId);
+  renderProducts();
+  renderLatest();
+  renderCart();
 }
 
-function renderCart() {
-  document.getElementById("cartCount").textContent = cart.reduce((s, i) => s + i.count, 0);
-  const items = cart.map((item, index) => {
-    const p = products.find(x => x.id === item.productId);
-    const line = lineTotal(p, item.baseQty) * item.count;
-    return `<div class="cart-item">
-      <div><b>${escapeHTML(p.name)}</b><br><small>${displayQuantity(item.baseQty, p.quantityType)} × ${item.count}</small></div>
-      <div style="text-align:right"><b>₹${money(line)}</b><div class="cart-controls"><button class="icon-btn" data-cart-dec="${index}">−</button><button class="icon-btn" data-cart-inc="${index}">+</button><button class="icon-btn" data-cart-remove="${index}">×</button></div></div>
-    </div>`;
-  }).join("");
-  document.getElementById("cartItems").innerHTML = items || `<div class="empty">Your cart is empty.<br><br><a href="#shop" onclick="closeCart()">Start shopping</a></div>`;
+/** +/- respects the CURRENT unit's own step/min (see stepFor/minFor). */
+function changeQty(productId, direction) {
+  const item = cartItemFor(productId);
+  if (!item) return;
+  const p = products.find(x => x.id === productId);
+  const step = stepFor(p, item.unit);
+  const min = minFor(p, item.unit);
+  const newQty = direction > 0 ? item.qty + step : item.qty - step;
 
-  document.querySelectorAll("[data-cart-inc]").forEach(b => b.onclick = () => { cart[b.dataset.cartInc].count++; renderCart(); });
-  document.querySelectorAll("[data-cart-dec]").forEach(b => b.onclick = () => { const i = cart[b.dataset.cartDec]; i.count--; if(i.count<=0) cart.splice(b.dataset.cartDec,1); renderCart(); });
-  document.querySelectorAll("[data-cart-remove]").forEach(b => () => {});
-  document.querySelectorAll("[data-cart-remove]").forEach(b => b.onclick = () => { cart.splice(Number(b.dataset.cartRemove),1); renderCart(); });
-
-  updateSummary();
+  if (newQty < min) { removeFromCart(productId); return; }
+  item.qty = Math.round(newQty * 1000) / 1000;
+  renderProducts();
+  renderLatest();
+  renderCart();
 }
 
-function lineTotal(p, baseQty) {
-  return pricingQuantity(baseQty, p.priceUnit) * p.price;
+/**
+ * MANDATORY RULE: changing the unit of a product already in the cart
+ * (g -> kg or kg -> g, ml -> L or L -> ml) REMOVES it from the cart and
+ * resets the quantity field to 0. The quantity is never converted. The
+ * customer must re-enter a quantity and press "Add to cart" again.
+ */
+function changeUnit(productId) {
+  const existed = cartItemFor(productId);
+  if (!existed) return;
+  cart = cart.filter(i => i.productId !== productId);
+  renderProducts();
+  renderLatest();
+  renderCart();
+  const p = products.find(x => x.id === productId);
+  toast(`Unit changed — quantity reset to 0. Please re-enter and add ${p ? p.name : "the item"} again.`);
 }
 
 function cartSubtotal() {
   return cart.reduce((sum, i) => {
     const p = products.find(x => x.id === i.productId);
-    return sum + lineTotal(p, i.baseQty) * i.count;
+    return sum + (p ? lineTotal(p, i.qty, i.unit) : 0);
   }, 0);
+}
+
+function renderCart() {
+  document.getElementById("cartCount").textContent = cart.length;
+
+  const items = cart.map(item => {
+    const p = products.find(x => x.id === item.productId);
+    if (!p) return "";
+    const line = lineTotal(p, item.qty, item.unit);
+    return `<div class="cart-item">
+      <div><b>${escapeHTML(p.name)}</b><br><small>${formatNumber(item.qty)} ${escapeHTML(item.unit)}</small></div>
+      <div style="text-align:right"><b>₹${money(line)}</b>
+        <div class="cart-controls">
+          <button class="icon-btn" data-cart-dec="${escapeAttr(item.productId)}">−</button>
+          <button class="icon-btn" data-cart-inc="${escapeAttr(item.productId)}">+</button>
+          <button class="icon-btn" data-cart-remove="${escapeAttr(item.productId)}">×</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("cartItems").innerHTML = items || `<div class="empty">Your cart is empty.<br><br><a href="#shop" onclick="closeCart()">Start shopping</a></div>`;
+
+  document.querySelectorAll("[data-cart-inc]").forEach(b => b.onclick = () => changeQty(b.dataset.cartInc, 1));
+  document.querySelectorAll("[data-cart-dec]").forEach(b => b.onclick = () => changeQty(b.dataset.cartDec, -1));
+  document.querySelectorAll("[data-cart-remove]").forEach(b => b.onclick = () => removeFromCart(b.dataset.cartRemove));
+
+  updateSummary(
+    selectedLocation && selectedLocation.distanceKm != null ? selectedLocation.distanceKm : null,
+    selectedLocation && selectedLocation.deliveryCharge ? selectedLocation.deliveryCharge : 0
+  );
 }
 
 function updateSummary(distanceKm = null, deliveryCharge = 0) {
@@ -316,6 +469,10 @@ function showCheckout() {
   document.querySelector(".drawer-body").scrollTop = 0;
 }
 
+// ---------------------------------------------------------------
+// GOOGLE MAPS
+// ---------------------------------------------------------------
+
 async function initSebaMaps() {
   try {
     const [{ Map, Marker }, { PlaceAutocompleteElement }, { Route }] = await Promise.all([
@@ -328,7 +485,8 @@ async function initSebaMaps() {
     initMapIfPossible();
   } catch (e) {
     console.error("Google Maps initialization failed", e);
-    document.getElementById("locationStatus").innerHTML = `<span class="bad">Map could not load. Check your Google Maps API key and enabled APIs.</span>`;
+    const status = document.getElementById("locationStatus");
+    if (status) status.innerHTML = `<span class="bad">Map could not load. Check your Google Maps API key and enabled APIs.</span>`;
   }
 }
 window.initSebaMaps = initSebaMaps;
@@ -348,7 +506,8 @@ function initMapIfPossible() {
   placeAutocomplete = new PlaceAutocompleteElement();
   placeAutocomplete.placeholder = "Search your delivery location…";
   placeAutocomplete.setAttribute("included-region-codes", "in");
-  document.getElementById("placeSearch").replaceWith(placeAutocomplete);
+  const searchField = document.getElementById("placeSearch");
+  if (searchField) searchField.replaceWith(placeAutocomplete);
   placeAutocomplete.addEventListener("gmp-select", async ({ placePrediction }) => {
     try {
       const place = placePrediction.toPlace();
@@ -417,6 +576,10 @@ async function getDrivingDistanceKm(origin, destination) {
   return meters / 1000;
 }
 
+// ---------------------------------------------------------------
+// CHECKOUT / WHATSAPP
+// ---------------------------------------------------------------
+
 function validateCheckout() {
   const name = document.getElementById("customerName").value.trim();
   const phone = document.getElementById("customerPhone").value.replace(/\D/g, "");
@@ -444,8 +607,8 @@ function sendWhatsAppOrder() {
 
   const itemLines = cart.map((i, n) => {
     const p = products.find(x => x.id === i.productId);
-    const unitPrice = lineTotal(p, i.baseQty);
-    return `${n+1}. ${p.name} - ${displayQuantity(i.baseQty, p.quantityType)} × ${i.count} = ₹${money(unitPrice * i.count)}`;
+    const line = lineTotal(p, i.qty, i.unit);
+    return `${n+1}. ${p.name} - ${formatNumber(i.qty)} ${i.unit} = ₹${money(line)}`;
   }).join("\n");
 
   const msg = `🥬 SEBA FRESH - SALE ORDER
@@ -493,8 +656,6 @@ function openInfoPage(page) {
   document.getElementById("modalContent").innerHTML = `<h2>${title}</h2>${body}`;
   document.getElementById("pageModal").classList.add("open");
 }
-
-function showPageFromLinks() {}
 
 function vegetableEmoji(name) {
   const n = name.toLowerCase();
