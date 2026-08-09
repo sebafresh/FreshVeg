@@ -34,7 +34,7 @@
     .reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.review{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}.stars{color:#f4a72c;letter-spacing:2px}.review p{color:var(--muted)}.review b{font-size:13px}
     footer{background:#10281a;color:#e9f2eb;margin-top:50px}.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:30px;padding:42px 0}.footer-grid a{display:block;color:#c9d9cd;text-decoration:none;margin:8px 0;font-size:14px}.footer-grid h4{margin:0 0 12px}.copyright{border-top:1px solid rgba(255,255,255,.1);padding:16px 0;color:#a9bcad;font-size:12px}
     .drawer-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50}.drawer{position:fixed;right:0;top:0;height:100%;width:min(480px,100%);background:#fff;z-index:51;transform:translateX(105%);transition:.25s;display:flex;flex-direction:column}.drawer.open{transform:translateX(0)}.drawer-backdrop.open{display:block}.drawer-head{padding:20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}.drawer-body{overflow:auto;padding:18px;flex:1}.cart-item{border-bottom:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:1fr auto;gap:8px}.cart-item small{color:var(--muted)}.cart-controls{display:flex;gap:6px;align-items:center}.icon-btn{border:1px solid var(--line);background:#fff;border-radius:9px;width:32px;height:32px}.drawer-foot{border-top:1px solid var(--line);padding:16px}.summary-row{display:flex;justify-content:space-between;margin:7px 0}.total{font-size:20px;font-weight:900;border-top:1px dashed var(--line);padding-top:10px}.checkout{width:100%;margin-top:12px}.form{display:grid;gap:12px;margin-top:15px}.form label{font-size:12px;font-weight:900}.form input,.form textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;outline:none}.form textarea{min-height:80px;resize:vertical}
-    .map-wrap{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:8px}.map-search{padding:10px;background:#fff;border-bottom:1px solid var(--line)}.map-search input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px}.map{height:270px;background:#eaf0eb}.location-status{font-size:12px;margin-top:7px}.ok{color:var(--green)}.bad{color:var(--danger)}.notice{padding:12px;border-radius:12px;background:#fff8e7;color:#7a5a00;font-size:12px;margin-top:10px}.error{padding:15px;border-radius:14px;background:#fff0ef;color:var(--danger);font-size:13px}
+    .location-box{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fbfdfb;margin-top:8px}.location-btn{width:100%;border:0;background:var(--green);color:#fff;border-radius:12px;padding:13px;font-weight:900;transition:.2s}.location-btn:hover{background:var(--green2)}.location-btn:disabled{opacity:.65;cursor:wait}.location-highlight{animation:locationPulse .9s ease-in-out 3;box-shadow:0 0 0 4px rgba(180,35,24,.14);background:var(--danger)}@keyframes locationPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}.location-status{font-size:12px;margin-top:9px}.ok{color:var(--green)}.bad{color:var(--danger)}.notice{padding:12px;border-radius:12px;background:#fff8e7;color:#7a5a00;font-size:12px;margin-top:10px}.error{padding:15px;border-radius:14px;background:#fff0ef;color:var(--danger);font-size:13px}
     .modal{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px}.modal.open{display:flex}.modal-card{background:#fff;border-radius:24px;width:min(700px,100%);max-height:90vh;overflow:auto;padding:22px}.close{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 10px;float:right}.modal h2{margin-top:0}
     .loading{padding:40px;text-align:center;color:var(--muted);grid-column:1/-1}.empty{padding:35px;text-align:center;color:var(--muted);grid-column:1/-1}
     .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--dark);color:#fff;padding:12px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s;z-index:100;font-size:13px}.toast.show{opacity:1;transform:translate(-50%,0)}
@@ -85,7 +85,7 @@
         <div class="step"><div class="step-num">1</div><h3>Choose products</h3><p>Search or filter vegetables and select what you need.</p></div>
         <div class="step"><div class="step-num">2</div><h3>Set quantity</h3><p>Use grams, kilograms, litres or millilitres where applicable.</p></div>
         <div class="step"><div class="step-num">3</div><h3>Review cart</h3><p>Check products, GST and delivery charges.</p></div>
-        <div class="step"><div class="step-num">4</div><h3>Select location</h3><p>Search on the map or choose the delivery point.</p></div>
+        <div class="step"><div class="step-num">4</div><h3>Share location</h3><p>Allow current location access, or paste a Google Maps location link.</p></div>
         <div class="step"><div class="step-num">5</div><h3>Send WhatsApp order</h3><p>We confirm the sale order and arrange delivery.</p></div>
       </div>
     </section>
@@ -136,15 +136,14 @@
           <div><label for="customerPhone">Mobile number *</label><input id="customerPhone" inputmode="tel" placeholder="10-digit mobile number"></div>
           <div>
             <label>Delivery location *</label>
-            <div class="map-wrap">
-              <div class="map-search"><input id="placeSearch" placeholder="Search your delivery location…"></div>
-              <div id="map" class="map"></div>
+            <div class="location-box">
+              <button type="button" class="location-btn" id="shareLocationBtn">📍 Share My Current Location</button>
+              <div class="location-status" id="locationStatus">We need your delivery location to calculate delivery availability. Your browser may ask for location permission.</div>
+              <div class="notice">If you do not want to share browser location, paste a Google Maps location link in Delivery instructions below. Delivery: up to 5 km free • &gt;5 km to 10 km: ₹30 • &gt;10 km: unavailable.</div>
             </div>
-            <div class="location-status" id="locationStatus">Search a location or click the map to choose a delivery point.</div>
-            <div class="notice">Delivery: up to 5 km free • &gt;5 km to 10 km: ₹30 • &gt;10 km: unavailable.</div>
           </div>
           <div><label for="deliveryAddress">Delivery address / landmark *</label><textarea id="deliveryAddress" placeholder="House/flat, street, landmark"></textarea></div>
-          <div><label for="instructions">Delivery instructions</label><textarea id="instructions" placeholder="Example: Please call before delivery."></textarea></div>
+          <div><label for="instructions">Delivery instructions</label><textarea id="instructions" placeholder="Example: Please call before delivery. If you cannot share current location, paste your Google Maps location link here."></textarea></div>
         </div>
       </div>
     </div>
@@ -159,7 +158,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="app.js"></script>
-  <!-- Replace YOUR_GOOGLE_MAPS_API_KEY below. Enable Maps JavaScript API, Places API (New), and Routes API. -->
-  <script async src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places,marker&callback=initSebaMaps&v=weekly"></script>
+
 </body>
 </html>
