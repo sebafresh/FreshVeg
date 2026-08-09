@@ -26,6 +26,9 @@
     .search-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.search{flex:1;min-width:220px;position:relative}.search input{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px 16px 14px 42px;outline:none}.search:before{content:"⌕";position:absolute;left:15px;top:10px;font-size:22px;color:var(--muted)}.chips{display:flex;gap:8px;overflow:auto;padding-bottom:3px}.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:10px 14px;white-space:nowrap;font-weight:800;font-size:13px}.chip.active{background:var(--green);border-color:var(--green);color:#fff}
     .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.product{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}.product-img{aspect-ratio:1/1;background:linear-gradient(145deg,#eef7ee,#d9ead9);display:grid;place-items:center;overflow:hidden}.product-img img{width:100%;height:100%;object-fit:cover}.emoji-img{font-size:78px}.product-body{padding:15px}.product-category{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--green);font-weight:900}.product h3{font-size:17px;margin:5px 0}.product-desc{font-size:12px;color:var(--muted);min-height:34px}.price{font-size:18px;font-weight:900;margin:8px 0}.price small{font-size:11px;color:var(--muted);font-weight:700}
     .qty-line{display:flex;gap:7px;align-items:center;margin-top:10px}.qty-input{width:76px;border:1px solid var(--line);border-radius:10px;padding:10px}.unit-select{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}.add{width:100%;margin-top:10px;border:0;background:var(--dark);color:#fff;border-radius:12px;padding:11px;font-weight:900}.sold{color:var(--danger);font-weight:800;font-size:13px}
+    /* --- in-cart stepper (replaces qty-line once a product is added) --- */
+    .stepper{display:flex;align-items:center;gap:6px;margin-top:10px;background:#eef5ef;border-radius:12px;padding:5px}.stepper button{width:32px;height:32px;border:0;border-radius:9px;background:var(--green);color:#fff;font-weight:900;font-size:16px;line-height:1}.stepper button:hover{background:var(--green2)}.stepper .qty-val{flex:1;text-align:center;font-weight:900}.stepper select{border:1px solid var(--line);border-radius:9px;padding:6px;background:#fff;font-size:12px}
+    .in-cart-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}.in-cart-badge{color:var(--green);font-weight:900;font-size:12px}.remove-link{border:0;background:none;color:var(--danger);font-weight:800;font-size:12px}
     .how{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.step{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}.step-num{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#e8f4e9;color:var(--green);font-weight:900}.step h3{font-size:16px;margin:12px 0 5px}.step p{font-size:13px;color:var(--muted);margin:0}
     .feature-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.feature{background:var(--dark);color:#fff;border-radius:24px;padding:30px}.feature h3{font-size:25px;margin:0 0 8px}.feature p{color:#d8e6dc}.bullets{display:grid;gap:10px}.bullet{display:flex;gap:10px;align-items:flex-start}.bullet i{font-style:normal;background:#dff2e4;color:var(--green);width:25px;height:25px;border-radius:50%;display:grid;place-items:center}
     .reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.review{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}.stars{color:#f4a72c;letter-spacing:2px}.review p{color:var(--muted)}.review b{font-size:13px}
@@ -102,9 +105,9 @@
     <section class="section container" id="reviews">
       <div class="section-head"><div><h2>What customers say</h2><p>A simple review section for the first version.</p></div></div>
       <div class="reviews">
-        <article class="review"><div class="stars">★★★★★</div><p>“Fresh vegetables and a very simple ordering process.”</p><b>— Seba Fresh customer</b></article>
-        <article class="review"><div class="stars">★★★★★</div><p>“I like being able to choose the exact quantity I need.”</p><b>— Seba Fresh customer</b></article>
-        <article class="review"><div class="stars">★★★★★</div><p>“The WhatsApp order is easy to understand and confirm.”</p><b>— Seba Fresh customer</b></article>
+        <article class="review"><div class="stars">★★★★★</div><p>"Fresh vegetables and a very simple ordering process."</p><b>— Seba Fresh customer</b></article>
+        <article class="review"><div class="stars">★★★★★</div><p>"I like being able to choose the exact quantity I need."</p><b>— Seba Fresh customer</b></article>
+        <article class="review"><div class="stars">★★★★★</div><p>"The WhatsApp order is easy to understand and confirm."</p><b>— Seba Fresh customer</b></article>
       </div>
     </section>
 
@@ -117,7 +120,7 @@
     <div class="container footer-grid">
       <div><div class="brand" style="color:#fff"><span class="logo">S</span><span><small style="color:#8fd4a5">FRESH • LOCAL • SIMPLE</small><strong>SEBA FRESH</strong></span></div><p style="color:#b7c8bb">Fresh vegetables with a simple WhatsApp ordering experience.</p></div>
       <div><h4>Explore</h4><a href="#shop">Shop</a><a href="#how">How it works</a><a href="#reviews">Reviews</a><a href="#about">About Us</a></div>
-      <div><h4>Information</h4><a href="#" data-page="privacy">Privacy Policy</a><a href="#" data-page="terms">Terms & Conditions</a><a href="#" data-page="delivery">Delivery Information</a><a href="#" data-page="refund">Cancellation / Refund</a><a href="https://wa.me/916300614017" target="_blank" rel="noopener">WhatsApp: 6300614017</a></div>
+      <div><h4>Information</h4><a href="#" data-page="privacy">Privacy Policy</a><a href="#" data-page="terms">Terms &amp; Conditions</a><a href="#" data-page="delivery">Delivery Information</a><a href="#" data-page="refund">Cancellation / Refund</a><a href="https://wa.me/916300614017" target="_blank" rel="noopener">WhatsApp: 6300614017</a></div>
     </div>
     <div class="container copyright">© <span id="year"></span> Seba Fresh. All rights reserved.</div>
   </footer>
