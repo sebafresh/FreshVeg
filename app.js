@@ -786,39 +786,50 @@ async function validateCheckout() {
      const itemLines = cart.map((i, n) => {
        const p = products.find(x => x.id === i.productId);
        const line = lineTotal(p, i.qty, i.unit);
-       return `${n+1}. ${p.name} - ${formatNumber(i.qty)} ${i.unit} = ₹${money(line)}`;
+       return `${n + 1}. ${p.name}\n   ${formatNumber(i.qty)} ${i.unit} × ₹${money(p.price)}/${p.priceUnit} = ₹${money(line)}`;
      }).join("\n");
 
-     const msg = `🥬 SEBA FRESH - SALE ORDER
- ━━━━━━━━━━━━━━━━━━
+     const msg = `🥬 SEBA FRESH
+━━━━━━━━━━━━━━━━━━━━━━━━
 
- Customer: ${name}
- Mobile: ${phone}
+🧾 SALE ORDER
 
- ITEMS
- ━━━━━━━━━━━━━━━━━━
- ${itemLines}
+CUSTOMER DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━
+👤 Name: ${name}
+📱 Mobile: ${phone}
 
- Subtotal: ₹${money(subtotal)}
- GST (${CONFIG.gstPercent}%): ₹${money(gst)}
- Delivery: ${delivery ? "₹"+money(delivery) : "FREE"}
- TOTAL: ₹${money(total)}
+ORDER ITEMS
+━━━━━━━━━━━━━━━━━━━━━━━━
+${itemLines}
 
- DELIVERY LOCATION
- ━━━━━━━━━━━━━━━━━━
- ${selectedLocation.address}
- Distance: approximately ${formatNumber(selectedLocation.distanceKm)} km
- Google Maps: ${mapsLink}
+💰 BILL SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━
+Subtotal        : ₹${money(subtotal)}
+GST (${CONFIG.gstPercent}%) : ₹${money(gst)}
+Delivery        : ${delivery ? "₹"+money(delivery) : "FREE"}
+────────────────────────
+TOTAL           : ₹${money(total)}
 
- DELIVERY ADDRESS / LANDMARK
- ${address}
+📍 DELIVERY LOCATION
+━━━━━━━━━━━━━━━━━━━━━━━━
+${selectedLocation.address}
+Distance        : Approximately ${formatNumber(selectedLocation.distanceKm)} km
+Google Maps     : ${mapsLink}
 
- ${instructions ? `DELIVERY INSTRUCTIONS
- ${instructions}\n` : ""}━━━━━━━━━━━━━━━━━━
- Please confirm the sale order.
+🏠 DELIVERY ADDRESS
+━━━━━━━━━━━━━━━━━━━━━━━━
+${address}
 
- Seba Fresh
- WhatsApp: 6300614017`;
+${instructions ? `📝 DELIVERY INSTRUCTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━
+${instructions}
+
+` : ""}━━━━━━━━━━━━━━━━━━━━━━━━
+Please confirm the sale order.
+
+Thank you for choosing Seba Fresh 🥬
+📱 WhatsApp: 6300614017`;
 
      window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
    } finally {
