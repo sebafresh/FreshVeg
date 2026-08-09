@@ -29,7 +29,7 @@ const CONFIG = {
 
   // REQUIRED: replace with the real Seba Fresh base/store coordinates.
   // These coordinates are used for the driving-distance calculation.
-  storeLocation: { lat: 0, lng: 0, label: "Seba Fresh" },
+  storeLocation: { lat: 17.46690654239371, lng: 78.34280212890498, label: "Seba Fresh" },
 
   // Default product image used when the Sheet Image column is blank
   // or the supplied image cannot be loaded.
