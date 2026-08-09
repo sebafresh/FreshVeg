@@ -31,6 +31,10 @@ const CONFIG = {
   // These coordinates are used for the driving-distance calculation.
   storeLocation: { lat: 0, lng: 0, label: "Seba Fresh" },
 
+  // Default product image used when the Sheet Image column is blank
+  // or the supplied image cannot be loaded.
+  defaultProductImage: "images/default-vegetable.jpg",
+
   // REQUIRED: paste your Google Sheets "Publish to web" CSV URL here.
   sheetCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTSSJEF3_D8B3Y3kbh_3X69Cj4DsVGz9Cb8LXlAlLe7q9gD8BcN_MXnZzoHq63iUMPa3XW2oXf51TzP/pub?output=csv"
 };
@@ -42,17 +46,19 @@ let products = [];
 let cart = [];
 
 let selectedCategory = "All";
-let map = null;
-let placeAutocomplete = null;
 let selectedLocation = null;
-let storeMarker = null;
-let customerMarker = null;
-let RouteClass = null;
+let locationRequestInProgress = false;
+let locationButtonTimer = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("year").textContent = new Date().getFullYear();
   bindUI();
   loadProducts();
+
+  // Ask for the customer's current location shortly after the page loads.
+  // The browser will show its own permission dialog; we never silently
+  // access location without the browser permission.
+  setTimeout(() => requestCurrentLocation(false), 700);
 });
 
 function bindUI() {
@@ -62,6 +68,7 @@ function bindUI() {
   document.getElementById("drawerBackdrop").addEventListener("click", closeCart);
   document.getElementById("checkoutBtn").addEventListener("click", showCheckout);
   document.getElementById("whatsappBtn").addEventListener("click", sendWhatsAppOrder);
+  document.getElementById("shareLocationBtn").addEventListener("click", () => requestCurrentLocation(true));
   document.getElementById("closeModal").addEventListener("click", () => document.getElementById("pageModal").classList.remove("open"));
 
   // Close the info modal by clicking its dark backdrop too, not just the × button.
@@ -165,7 +172,10 @@ function normalizeProduct(r) {
     defaultUnit: normalizeUnit(defaultUnit),
     step: step > 0 ? step : null,
     minQty: Number(r.min_qty || r.min_quantity || 0) || null,
+    // Supports the Google Sheet/Excel Image column (case-insensitive header
+    // normalization happens in parseCSV) and image_url as a fallback.
     image: r.image || r.image_url || "",
+    defaultImage: CONFIG.defaultProductImage,
     available: !["no","false","0","out of stock"].includes((r.available || "yes").toLowerCase()),
     featured: ["yes","true","1","latest","featured"].includes((r.featured || r.latest || "").toLowerCase()),
     description: r.description || ""
@@ -260,8 +270,12 @@ function productCard(p) {
   const units = p.quantityType === "volume" ? ["ml", "L"] : ["g", "kg"];
   const defaults = getDefaultQuantity(p);
 
-  const img = p.image
-    ? `<img loading="lazy" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emoji-img" style="display:none">🥬</span>`
+  const imageSource = p.image || p.defaultImage;
+
+  const img = imageSource
+    ? `<img loading="lazy" src="${escapeAttr(imageSource)}" alt="${escapeAttr(p.name)}"
+         onerror="handleProductImageError(this, '${escapeAttr(p.name)}')">
+       <span class="emoji-img" style="display:none">${vegetableEmoji(p.name)}</span>`
     : `<span class="emoji-img">${vegetableEmoji(p.name)}</span>`;
 
   let qtyBlock;
@@ -464,217 +478,362 @@ function showCheckout() {
   document.getElementById("checkoutForm").style.display = "block";
   document.getElementById("checkoutBtn").style.display = "none";
   document.getElementById("whatsappBtn").style.display = "block";
-  initMapIfPossible();
+  // If the customer has not shared location yet, give them a clear button.
+  updateLocationUI();
   document.getElementById("cartDrawer").scrollTop = 0;
   document.querySelector(".drawer-body").scrollTop = 0;
 }
 
 // ---------------------------------------------------------------
-// GOOGLE MAPS
-// ---------------------------------------------------------------
+ // DELIVERY LOCATION
+ // ---------------------------------------------------------------
+ // No map is displayed. The browser Geolocation API captures the
+ // customer's current coordinates. A Google Maps link is generated
+ // from those coordinates for the WhatsApp order.
+ // If the customer cannot share browser location, they can paste a
+ // Google Maps link into Delivery instructions. Coordinates are used
+ // when they can be extracted from the link.
 
-async function initSebaMaps() {
-  try {
-    // NOTE: Marker belongs to the "marker" library, NOT "maps".
-    // Pulling it from "maps" leaves Marker undefined and throws as
-    // soon as `new Marker(...)` runs — this was the actual bug.
-    const [{ Map }, { Marker }, { PlaceAutocompleteElement }, { Route }] = await Promise.all([
-      google.maps.importLibrary("maps"),
-      google.maps.importLibrary("marker"),
-      google.maps.importLibrary("places"),
-      google.maps.importLibrary("routes")
-    ]);
-    RouteClass = Route;
-    window.SebaMapLib = { Map, Marker, PlaceAutocompleteElement };
-    initMapIfPossible();
-  } catch (e) {
-    console.error("Google Maps initialization failed", e);
-    const status = document.getElementById("locationStatus");
-    if (status) status.innerHTML = `<span class="bad">Map could not load. Check your Google Maps API key and enabled APIs.</span>`;
-  }
-}
-window.initSebaMaps = initSebaMaps;
+ function validStoreLocation() {
+   return Number.isFinite(CONFIG.storeLocation.lat) &&
+     Number.isFinite(CONFIG.storeLocation.lng) &&
+     !(CONFIG.storeLocation.lat === 0 && CONFIG.storeLocation.lng === 0);
+ }
 
-// Google calls this automatically if the API key is missing, invalid,
-// unbilled, or blocked by referrer/API restrictions — the #1 real-world
-// reason a map "doesn't load" with no visible error.
-window.gm_authFailure = function () {
-  const status = document.getElementById("locationStatus");
-  if (status) {
-    status.innerHTML = `<span class="bad">Google Maps authentication failed. Check: the API key in index.html is correct (not the placeholder), Maps JavaScript API + Places API (New) + Routes API are all enabled, billing is active, and the key's HTTP referrer restriction allows this domain.</span>`;
-  }
-  console.error("[SebaFresh] gm_authFailure — invalid/restricted Google Maps API key. See index.html's map script tag.");
-};
+ function updateLocationUI(highlight = false) {
+   const btn = document.getElementById("shareLocationBtn");
+   const status = document.getElementById("locationStatus");
+   if (!btn || !status) return;
 
-function validStoreLocation() {
-  return Number.isFinite(CONFIG.storeLocation.lat) && Number.isFinite(CONFIG.storeLocation.lng) &&
-    !(CONFIG.storeLocation.lat === 0 && CONFIG.storeLocation.lng === 0);
-}
+   btn.classList.toggle("location-highlight", !!highlight);
 
-function initMapIfPossible() {
-  if (!window.SebaMapLib || map) return;
-  if (!validStoreLocation()) {
-    // Previously this just returned with no map and no explanation.
-    // CONFIG.storeLocation is still {lat:0,lng:0} until you set the
-    // real Seba Fresh coordinates — surface that clearly instead of
-    // leaving the map area blank with no clue why.
-    const status = document.getElementById("locationStatus");
-    if (status) status.innerHTML = `<span class="bad">Map disabled: set the real Seba Fresh coordinates in CONFIG.storeLocation (app.js) — it's currently 0, 0.</span>`;
-    console.warn("[SebaFresh] CONFIG.storeLocation is still the 0,0 placeholder — map will not initialize until it's set.");
-    return;
-  }
-  const { Map, Marker, PlaceAutocompleteElement } = window.SebaMapLib;
-  const center = { lat: CONFIG.storeLocation.lat, lng: CONFIG.storeLocation.lng };
-  map = new Map(document.getElementById("map"), { center, zoom: 13, mapTypeControl: false, streetViewControl: false, fullscreenControl: true, mapId: "DEMO_MAP_ID" });
-  storeMarker = new Marker({ map, position: center, title: "Seba Fresh" });
+   if (selectedLocation && selectedLocation.deliveryCharge !== null) {
+     btn.textContent = "✓ Current Location Captured";
+     status.innerHTML =
+       `<span class="ok">Location captured. Delivery distance: ${formatNumber(selectedLocation.distanceKm)} km • ` +
+       `${selectedLocation.deliveryCharge ? "₹"+money(selectedLocation.deliveryCharge)+" delivery charge" : "Free delivery"}.</span>`;
+     return;
+   }
 
-  placeAutocomplete = new PlaceAutocompleteElement();
-  placeAutocomplete.placeholder = "Search your delivery location…";
-  placeAutocomplete.setAttribute("included-region-codes", "in");
-  const searchField = document.getElementById("placeSearch");
-  if (searchField) searchField.replaceWith(placeAutocomplete);
-  placeAutocomplete.addEventListener("gmp-select", async ({ placePrediction }) => {
-    try {
-      const place = placePrediction.toPlace();
-      await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "id"] });
-      if (!place.location) return;
-      setSelectedLocation(place.location.lat(), place.location.lng(), place.formattedAddress || place.displayName || "Selected location", place.id || "");
-      map.panTo(place.location); map.setZoom(16);
-    } catch (e) { console.error(e); toast("Could not read that location."); }
-  });
+   btn.textContent = "📍 Share My Current Location";
+   if (!selectedLocation) {
+     status.innerHTML =
+       `<span class="bad">Delivery location is required. Tap the button to share your current location.</span>`;
+   }
+ }
 
-  map.addListener("click", e => {
-    if (e.latLng) setSelectedLocation(e.latLng.lat(), e.latLng.lng(), "Map selected location", "");
-  });
-}
+ function requestCurrentLocation(fromButton = false) {
+   const status = document.getElementById("locationStatus");
+   const btn = document.getElementById("shareLocationBtn");
 
-async function setSelectedLocation(lat, lng, address, placeId) {
-  selectedLocation = { lat, lng, address, placeId };
-  if (window.SebaMapLib && map) {
-    const { Marker } = window.SebaMapLib;
-    if (customerMarker) customerMarker.setMap(null);
-    customerMarker = new Marker({ map, position: { lat, lng }, title: "Delivery location" });
-  }
-  const status = document.getElementById("locationStatus");
-  status.textContent = "Checking driving distance…";
-  status.className = "location-status";
-  if (!validStoreLocation()) {
-    status.innerHTML = `<span class="bad">Store location is not configured in app.js.</span>`;
-    updateSummary(null, 0);
-    return;
-  }
-  try {
-    const distanceKm = await getDrivingDistanceKm({lat: CONFIG.storeLocation.lat, lng: CONFIG.storeLocation.lng}, {lat, lng});
-    if (distanceKm > CONFIG.maxDeliveryKm) {
-      selectedLocation.distanceKm = distanceKm;
-      selectedLocation.deliveryCharge = null;
-      status.innerHTML = `<span class="bad">This location is ${formatNumber(distanceKm)} km away. Seba Fresh currently delivers only within ${CONFIG.maxDeliveryKm} km.</span>`;
-      updateSummary(distanceKm, 0);
-      return;
-    }
-    const charge = distanceKm > CONFIG.freeDeliveryKm ? CONFIG.deliveryCharge : 0;
-    selectedLocation.distanceKm = distanceKm;
-    selectedLocation.deliveryCharge = charge;
-    status.innerHTML = `<span class="ok">Delivery available: ${formatNumber(distanceKm)} km by road • ${charge ? "₹"+money(charge)+" delivery charge" : "Free delivery"}.</span>`;
-    updateSummary(distanceKm, charge);
-  } catch (e) {
-    console.error(e);
-    selectedLocation = null;
-    status.innerHTML = `<span class="bad">Unable to calculate driving distance. Please try the location again.</span>`;
-    updateSummary(null, 0);
-  }
-}
+   if (!navigator.geolocation) {
+     if (status) status.innerHTML =
+       `<span class="bad">Location sharing is not supported by this browser. Please paste a Google Maps location link in the instructions.</span>`;
+     if (fromButton) highlightLocationButton();
+     return;
+   }
 
-async function getDrivingDistanceKm(origin, destination) {
-  if (!RouteClass) throw new Error("Routes library not ready.");
-  const request = {
-    origin,
-    destination,
-    travelMode: "DRIVING",
-    routingPreference: "TRAFFIC_UNAWARE",
-    fields: ["legs"]
-  };
-  const result = await RouteClass.computeRoutes(request);
-  if (!result.routes || !result.routes.length) throw new Error("No route found.");
-  const meters = result.routes[0].legs.reduce((sum, leg) => sum + (leg.distanceMeters || 0), 0);
-  if (!meters) throw new Error("Route has no distance.");
-  return meters / 1000;
-}
+   if (locationRequestInProgress) return;
+   locationRequestInProgress = true;
+
+   if (btn) {
+     btn.disabled = true;
+     btn.textContent = "📍 Getting your location…";
+   }
+   if (status) status.innerHTML = `<span>Requesting your current location…</span>`;
+
+   navigator.geolocation.getCurrentPosition(
+     async position => {
+       locationRequestInProgress = false;
+       const lat = position.coords.latitude;
+       const lng = position.coords.longitude;
+       const accuracy = Math.round(position.coords.accuracy || 0);
+
+       try {
+         await setSelectedLocation(
+           lat,
+           lng,
+           "Customer current location",
+           "",
+           accuracy
+         );
+       } finally {
+         if (btn) btn.disabled = false;
+         updateLocationUI();
+       }
+     },
+     error => {
+       locationRequestInProgress = false;
+       if (btn) btn.disabled = false;
+
+       let message = "Could not get your current location.";
+       if (error.code === error.PERMISSION_DENIED) {
+         message = "Location permission was denied. Please allow location access, or paste a Google Maps location link in the instructions.";
+       } else if (error.code === error.POSITION_UNAVAILABLE) {
+         message = "Your location is currently unavailable. Please try again or paste a Google Maps location link in the instructions.";
+       } else if (error.code === error.TIMEOUT) {
+         message = "Location request timed out. Please try again.";
+       }
+
+       if (status) status.innerHTML = `<span class="bad">${escapeHTML(message)}</span>`;
+       if (fromButton) highlightLocationButton();
+     },
+     {
+       enableHighAccuracy: true,
+       timeout: 15000,
+       maximumAge: 60000
+     }
+   );
+ }
+
+ function highlightLocationButton() {
+   const btn = document.getElementById("shareLocationBtn");
+   if (!btn) return;
+
+   btn.classList.remove("location-highlight");
+   void btn.offsetWidth;
+   btn.classList.add("location-highlight");
+
+   clearTimeout(locationButtonTimer);
+   locationButtonTimer = setTimeout(() => {
+     btn.classList.remove("location-highlight");
+   }, 3000);
+ }
+
+ async function setSelectedLocation(lat, lng, address, placeId = "", accuracy = null) {
+   selectedLocation = {
+     lat: Number(lat),
+     lng: Number(lng),
+     address: address || "Customer current location",
+     placeId,
+     accuracy
+   };
+
+   const status = document.getElementById("locationStatus");
+   if (status) status.innerHTML = `<span>Checking delivery distance…</span>`;
+
+   if (!validStoreLocation()) {
+     selectedLocation.distanceKm = null;
+     selectedLocation.deliveryCharge = null;
+     if (status) status.innerHTML =
+       `<span class="bad">Store location is not configured in app.js. Set CONFIG.storeLocation before taking orders.</span>`;
+     updateSummary(null, 0);
+     return false;
+   }
+
+   try {
+     // The map has been removed, so we use straight-line distance.
+     // Keep the delivery limit conservative and label it as approximate.
+     const distanceKm = getDistanceKm(
+       CONFIG.storeLocation.lat,
+       CONFIG.storeLocation.lng,
+       selectedLocation.lat,
+       selectedLocation.lng
+     );
+
+     if (distanceKm > CONFIG.maxDeliveryKm) {
+       selectedLocation.distanceKm = distanceKm;
+       selectedLocation.deliveryCharge = null;
+       if (status) status.innerHTML =
+         `<span class="bad">This location is approximately ${formatNumber(distanceKm)} km away. ` +
+         `Seba Fresh currently delivers only within ${CONFIG.maxDeliveryKm} km.</span>`;
+       updateSummary(distanceKm, 0);
+       return false;
+     }
+
+     const charge = distanceKm > CONFIG.freeDeliveryKm ? CONFIG.deliveryCharge : 0;
+     selectedLocation.distanceKm = distanceKm;
+     selectedLocation.deliveryCharge = charge;
+
+     if (status) status.innerHTML =
+       `<span class="ok">Delivery available: approximately ${formatNumber(distanceKm)} km ` +
+       `${selectedLocation.accuracy ? `• GPS accuracy ±${selectedLocation.accuracy} m ` : ""}• ` +
+       `${charge ? "₹"+money(charge)+" delivery charge" : "Free delivery"}.</span>`;
+
+     updateSummary(distanceKm, charge);
+     return true;
+   } catch (e) {
+     console.error(e);
+     selectedLocation = null;
+     if (status) status.innerHTML =
+       `<span class="bad">Unable to calculate delivery distance. Please share the location again.</span>`;
+     updateSummary(null, 0);
+     return false;
+   }
+ }
+
+ function getDistanceKm(lat1, lng1, lat2, lng2) {
+   const toRad = degrees => degrees * Math.PI / 180;
+   const earthRadiusKm = 6371;
+
+   const dLat = toRad(lat2 - lat1);
+   const dLng = toRad(lng2 - lng1);
+
+   const a =
+     Math.sin(dLat / 2) ** 2 +
+     Math.cos(toRad(lat1)) *
+     Math.cos(toRad(lat2)) *
+     Math.sin(dLng / 2) ** 2;
+
+   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+ }
+
+ function googleMapsLinkForLocation(location) {
+   if (!location) return "";
+   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.lat + "," + location.lng)}`;
+ }
+
+ // Extract coordinates from common Google Maps URL formats.
+ function parseGoogleMapsCoordinates(text) {
+   const value = String(text || "").trim();
+   if (!value) return null;
+
+   const patterns = [
+     /@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+     /[?&](?:query|q|ll)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/i,
+     /(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/
+   ];
+
+   for (const pattern of patterns) {
+     const match = value.match(pattern);
+     if (!match) continue;
+
+     const lat = Number(match[1]);
+     const lng = Number(match[2]);
+
+     if (
+       Number.isFinite(lat) && Number.isFinite(lng) &&
+       lat >= -90 && lat <= 90 &&
+       lng >= -180 && lng <= 180
+     ) {
+       return { lat, lng };
+     }
+   }
+
+   return null;
+ }
+
+ async function useGoogleMapsInstructionLocation() {
+   const instructions = document.getElementById("instructions");
+   const coords = parseGoogleMapsCoordinates(instructions ? instructions.value : "");
+
+   if (!coords) return false;
+
+   return setSelectedLocation(
+     coords.lat,
+     coords.lng,
+     "Google Maps location shared in instructions",
+     ""
+   );
+ }
 
 // ---------------------------------------------------------------
 // CHECKOUT / WHATSAPP
 // ---------------------------------------------------------------
 
-function validateCheckout() {
-  const name = document.getElementById("customerName").value.trim();
-  const phone = document.getElementById("customerPhone").value.replace(/\D/g, "");
-  const address = document.getElementById("deliveryAddress").value.trim();
-  if (!name) return "Please enter your name.";
-  if (!/^[6-9]\d{9}$/.test(phone)) return "Please enter a valid 10-digit Indian mobile number.";
-  if (!selectedLocation || selectedLocation.deliveryCharge === null) return "Please select a delivery location within 10 km.";
-  if (!address) return "Please enter the delivery address or landmark.";
-  return "";
-}
+async function validateCheckout() {
+   const name = document.getElementById("customerName").value.trim();
+   const phone = document.getElementById("customerPhone").value.replace(/\D/g, "");
+   const address = document.getElementById("deliveryAddress").value.trim();
 
-function sendWhatsAppOrder() {
-  const error = validateCheckout();
-  if (error) return toast(error);
+   if (!name) return "Please enter your name.";
+   if (!/^[6-9]\d{9}$/.test(phone)) return "Please enter a valid 10-digit Indian mobile number.";
 
-  const name = document.getElementById("customerName").value.trim();
-  const phone = document.getElementById("customerPhone").value.replace(/\D/g, "");
-  const address = document.getElementById("deliveryAddress").value.trim();
-  const instructions = document.getElementById("instructions").value.trim();
-  const delivery = selectedLocation.deliveryCharge || 0;
-  const subtotal = cartSubtotal();
-  const gst = subtotal * CONFIG.gstPercent / 100;
-  const total = subtotal + gst + delivery;
-  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${selectedLocation.lat},${selectedLocation.lng}`;
+   // If GPS was not shared, try to read coordinates from a Google Maps
+   // link pasted into Delivery instructions.
+   if (!selectedLocation || selectedLocation.deliveryCharge === null) {
+     const usedInstructionLocation = await useGoogleMapsInstructionLocation();
 
-  const itemLines = cart.map((i, n) => {
-    const p = products.find(x => x.id === i.productId);
-    const line = lineTotal(p, i.qty, i.unit);
-    return `${n+1}. ${p.name} - ${formatNumber(i.qty)} ${i.unit} = ₹${money(line)}`;
-  }).join("\n");
+     if (!usedInstructionLocation) {
+       highlightLocationButton();
 
-  const msg = `🥬 SEBA FRESH - SALE ORDER
-━━━━━━━━━━━━━━━━━━
+       const btn = document.getElementById("shareLocationBtn");
+       if (btn) btn.scrollIntoView({ behavior: "smooth", block: "center" });
 
-Customer: ${name}
-Mobile: ${phone}
+       return "We need your delivery location. Tap “Share My Current Location”, or paste a Google Maps location link in Delivery instructions.";
+     }
+   }
 
-ITEMS
-━━━━━━━━━━━━━━━━━━
-${itemLines}
+   if (!address) return "Please enter the delivery address or landmark.";
 
-Subtotal: ₹${money(subtotal)}
-GST (${CONFIG.gstPercent}%): ₹${money(gst)}
-Delivery: ${delivery ? "₹"+money(delivery) : "FREE"}
-TOTAL: ₹${money(total)}
+   return "";
+ }
 
-DELIVERY LOCATION
-━━━━━━━━━━━━━━━━━━
-${selectedLocation.address}
-Distance: ${formatNumber(selectedLocation.distanceKm)} km
-Google Maps: ${mapsLink}
+ async function sendWhatsAppOrder() {
+   const button = document.getElementById("whatsappBtn");
+   if (button) {
+     button.disabled = true;
+     button.textContent = "Preparing order…";
+   }
 
-DELIVERY ADDRESS / LANDMARK
-${address}
+   try {
+     const error = await validateCheckout();
+     if (error) {
+       toast(error);
+       return;
+     }
 
-${instructions ? `DELIVERY INSTRUCTIONS
-${instructions}\n` : ""}━━━━━━━━━━━━━━━━━━
-Please confirm the sale order.
+     const name = document.getElementById("customerName").value.trim();
+     const phone = document.getElementById("customerPhone").value.replace(/\D/g, "");
+     const address = document.getElementById("deliveryAddress").value.trim();
+     const instructions = document.getElementById("instructions").value.trim();
+     const delivery = selectedLocation.deliveryCharge || 0;
+     const subtotal = cartSubtotal();
+     const gst = subtotal * CONFIG.gstPercent / 100;
+     const total = subtotal + gst + delivery;
+     const mapsLink = googleMapsLinkForLocation(selectedLocation);
 
-Seba Fresh
-WhatsApp: 6300614017`;
+     const itemLines = cart.map((i, n) => {
+       const p = products.find(x => x.id === i.productId);
+       const line = lineTotal(p, i.qty, i.unit);
+       return `${n+1}. ${p.name} - ${formatNumber(i.qty)} ${i.unit} = ₹${money(line)}`;
+     }).join("\n");
 
-  window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
-}
+     const msg = `🥬 SEBA FRESH - SALE ORDER
+ ━━━━━━━━━━━━━━━━━━
+
+ Customer: ${name}
+ Mobile: ${phone}
+
+ ITEMS
+ ━━━━━━━━━━━━━━━━━━
+ ${itemLines}
+
+ Subtotal: ₹${money(subtotal)}
+ GST (${CONFIG.gstPercent}%): ₹${money(gst)}
+ Delivery: ${delivery ? "₹"+money(delivery) : "FREE"}
+ TOTAL: ₹${money(total)}
+
+ DELIVERY LOCATION
+ ━━━━━━━━━━━━━━━━━━
+ ${selectedLocation.address}
+ Distance: approximately ${formatNumber(selectedLocation.distanceKm)} km
+ Google Maps: ${mapsLink}
+
+ DELIVERY ADDRESS / LANDMARK
+ ${address}
+
+ ${instructions ? `DELIVERY INSTRUCTIONS
+ ${instructions}\n` : ""}━━━━━━━━━━━━━━━━━━
+ Please confirm the sale order.
+
+ Seba Fresh
+ WhatsApp: 6300614017`;
+
+     window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+   } finally {
+     if (button) {
+       button.disabled = false;
+       button.textContent = "Send Sale Order on WhatsApp";
+     }
+   }
+ }
 
 function openInfoPage(page) {
   const pages = {
     privacy: ["Privacy Policy", `<p>Seba Fresh uses customer information only to process and deliver orders. Information entered on this website may include name, mobile number, delivery address, selected location and delivery instructions. The sale order is sent to Seba Fresh through WhatsApp when the customer chooses to submit it.</p><p>The product catalog is read from the published product sheet. Do not store private customer information in the public product sheet.</p>`],
     terms: ["Terms & Conditions", `<p>Product availability and prices are subject to confirmation by Seba Fresh. The website prepares a sale-order request; an order is considered confirmed only after Seba Fresh confirms it through WhatsApp or another agreed channel.</p><p>Displayed totals are calculated from the catalog available at the time of ordering. Final invoice details may be confirmed before delivery.</p>`],
-    delivery: ["Delivery Information", `<p>Delivery is available within a maximum <b>10 km driving distance</b> from the configured Seba Fresh location.</p><ul><li>Up to 5 km: free delivery.</li><li>More than 5 km and up to 10 km: ₹30 delivery charge.</li><li>More than 10 km: the website will not allow the sale order to be submitted.</li></ul><p>Delivery distance is calculated using Google Maps routing.</p>`],
+    delivery: ["Delivery Information", `<p>Delivery is available within an approximate <b>10 km location radius</b> from the configured Seba Fresh location.</p><ul><li>Up to 5 km: free delivery.</li><li>More than 5 km and up to 10 km: ₹30 delivery charge.</li><li>More than 10 km: the website will not allow the sale order to be submitted.</li></ul><p>The website uses the customer's shared GPS coordinates and calculates an approximate straight-line distance. The WhatsApp order also includes a Google Maps link for delivery.</p>`],
     refund: ["Cancellation / Refund", `<p>Because this is a fresh-product ordering service, cancellation and refund decisions should be handled by Seba Fresh based on the status of the sale order and delivery. Contact <b>6300614017</b> for support.</p>`]
   };
   const [title, body] = pages[page] || ["Information", "<p>Information unavailable.</p>"];
