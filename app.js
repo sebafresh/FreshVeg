@@ -53,11 +53,10 @@ let locationButtonTimer = null;
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("year").textContent = new Date().getFullYear();
   bindUI();
+  bindProductEvents();   // delegated listeners — attached once, never re-added
   loadProducts();
 
   // Ask for the customer's current location shortly after the page loads.
-  // The browser will show its own permission dialog; we never silently
-  // access location without the browser permission.
   setTimeout(() => requestCurrentLocation(false), 700);
 });
 
@@ -105,9 +104,42 @@ function bindUI() {
   });
 }
 
+// ---------------------------------------------------------------
+// DUMMY PRODUCTS — shown automatically when running on localhost
+// so you can develop without a live Google Sheet.
+// Images use Unsplash Source URLs which work in any browser
+// (no API key needed) and also work on GitHub Pages.
+// ---------------------------------------------------------------
+const DUMMY_PRODUCTS = [
+  { id:"d-1", name:"Tomato",     category:"Vegetables", price:40,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1546470427-e26264be0b11?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Fresh red tomatoes" },
+  { id:"d-2", name:"Potato",     category:"Vegetables", price:30,  priceUnit:"kg", quantityType:"weight", defaultQty:1,   defaultUnit:"kg",step:1,   minQty:1,   image:"https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Fresh potatoes" },
+  { id:"d-3", name:"Onion",      category:"Vegetables", price:35,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1508747703725-719777637510?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Red onions" },
+  { id:"d-4", name:"Carrot",     category:"Vegetables", price:50,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Crunchy carrots" },
+  { id:"d-5", name:"Spinach",    category:"Leafy",      price:20,  priceUnit:"kg", quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh spinach leaves" },
+  { id:"d-6", name:"Cabbage",    category:"Leafy",      price:25,  priceUnit:"kg", quantityType:"weight", defaultQty:1,   defaultUnit:"kg",step:1,   minQty:1,   image:"https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Farm fresh cabbage" },
+  { id:"d-7", name:"Broccoli",   category:"Vegetables", price:80,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Green broccoli florets" },
+  { id:"d-8", name:"Cucumber",   category:"Vegetables", price:30,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh cucumbers" },
+  { id:"d-9", name:"Coconut Oil",category:"Oils",       price:180, priceUnit:"L",  quantityType:"volume",  defaultQty:1,   defaultUnit:"L", step:1,   minQty:1,   image:"https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Pure coconut oil" },
+  { id:"d-10",name:"Lemon",      category:"Fruits",     price:60,  priceUnit:"kg", quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh lemons" }
+];
+
+function isLocalhost() {
+  return ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+}
+
 async function loadProducts() {
   const grid = document.getElementById("productGrid");
   const latest = document.getElementById("latestGrid");
+
+  // On localhost — load dummy data immediately so development works offline.
+  if (isLocalhost()) {
+    console.info("[Seba Fresh] Running on localhost — using dummy products. Deploy to GitHub Pages to use the live Google Sheet.");
+    products = DUMMY_PRODUCTS;
+    renderCategories(products);
+    renderProducts();
+    renderLatest();
+    return;
+  }
 
   if (!CONFIG.sheetCsvUrl || CONFIG.sheetCsvUrl.includes("PASTE_YOUR")) {
     grid.innerHTML = `<div class="error">Google Sheet is not connected yet. Open <b>app.js</b> and paste your published CSV URL into <b>CONFIG.sheetCsvUrl</b>.</div>`;
@@ -296,12 +328,11 @@ function productCard(p) {
         <button type="button" data-inc="${escapeAttr(p.id)}" aria-label="Increase quantity">+</button>
       </div>`;
   } else {
-    // Not yet in the cart: quantity starts at 0 and is NEVER added
-    // automatically — the customer must type a quantity and press
-    // "Add to cart" themselves.
+    // Not yet in cart: pre-fill with the product's default quantity so the
+    // customer can press "Add to cart" immediately without typing anything.
     qtyBlock = `
       <div class="qty-line">
-        <input class="qty-input" type="number" min="0" step="${stepFor(p, defaults.unit)}" value="0" data-qty-field="${escapeAttr(p.id)}" aria-label="Quantity">
+        <input class="qty-input" type="number" min="0" step="${stepFor(p, defaults.unit)}" value="${defaults.qty}" data-qty-field="${escapeAttr(p.id)}" aria-label="Quantity">
         <select class="unit-select" data-unit-pre="${escapeAttr(p.id)}" aria-label="Unit">
           ${units.map(u => `<option value="${u}" ${u === defaults.unit ? "selected" : ""}>${u}</option>`).join("")}
         </select>
@@ -321,41 +352,78 @@ function productCard(p) {
   </article>`;
 }
 
-function bindProductCards() {
-  // Add to cart
-  document.querySelectorAll("[data-add]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const p = products.find(x => x.id === btn.dataset.add);
-      const card = btn.closest(".product");
-      const unit = card.querySelector("[data-unit-pre]").value;
-      const qty = Number(card.querySelector("[data-qty-field]").value);
-      addToCart(p, qty, unit);
+// ---------------------------------------------------------------
+// EVENT DELEGATION — attached ONCE on DOMContentLoaded so that
+// re-renders (renderProducts / renderLatest / renderCart) never
+// stack up duplicate listeners, which was the root cause of the
+// "quantity doubles on every +/- click" bug.
+// ---------------------------------------------------------------
+
+function bindProductEvents() {
+  // Delegate from both grids and the cart drawer to catch all cards.
+  ["productGrid", "latestGrid", "cartItems"].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener("click", e => {
+      const t = e.target;
+
+      // Add to cart button
+      const addId = t.closest("[data-add]")?.dataset.add;
+      if (addId) {
+        const p = products.find(x => x.id === addId);
+        const card = t.closest(".product");
+        const unit = card.querySelector("[data-unit-pre]").value;
+        const qty  = Number(card.querySelector("[data-qty-field]").value);
+        addToCart(p, qty, unit);
+        return;
+      }
+
+      // Increment / decrement on in-cart stepper (product card)
+      const incId = t.closest("[data-inc]")?.dataset.inc;
+      if (incId) { changeQty(incId,  1); return; }
+      const decId = t.closest("[data-dec]")?.dataset.dec;
+      if (decId) { changeQty(decId, -1); return; }
+
+      // Remove from card
+      const removeId = t.closest("[data-remove]")?.dataset.remove;
+      if (removeId) { removeFromCart(removeId); return; }
+
+      // Cart drawer +/- / remove
+      const cartInc = t.closest("[data-cart-inc]")?.dataset.cartInc;
+      if (cartInc) { changeQty(cartInc,  1); return; }
+      const cartDec = t.closest("[data-cart-dec]")?.dataset.cartDec;
+      if (cartDec) { changeQty(cartDec, -1); return; }
+      const cartRm  = t.closest("[data-cart-remove]")?.dataset.cartRemove;
+      if (cartRm)  { removeFromCart(cartRm);  return; }
     });
-  });
 
-  // Pre-add unit change: just updates the input's step so g/kg (or ml/L)
-  // never share one increment. Nothing is in the cart yet, so no reset needed.
-  document.querySelectorAll("[data-unit-pre]").forEach(sel => {
-    sel.addEventListener("change", () => {
-      const p = products.find(x => x.id === sel.dataset.unitPre);
-      const card = sel.closest(".product");
-      const field = card.querySelector("[data-qty-field]");
-      field.step = stepFor(p, sel.value);
-      field.value = "0";
+    el.addEventListener("change", e => {
+      const t = e.target;
+
+      // Pre-add unit change: update step on the qty input, reset to default qty
+      const prePid = t.dataset.unitPre;
+      if (prePid) {
+        const p = products.find(x => x.id === prePid);
+        const card = t.closest(".product");
+        const field = card.querySelector("[data-qty-field]");
+        field.step  = stepFor(p, t.value);
+        // Reset to the product's default for the newly selected unit
+        const defaults = getDefaultQuantity(p);
+        field.value = (t.value === defaults.unit) ? defaults.qty : minFor(p, t.value);
+        return;
+      }
+
+      // Post-add (in-cart) unit change
+      const changePid = t.dataset.unitChange;
+      if (changePid) { changeUnit(changePid); return; }
     });
-  });
-
-  // +/- on an item already in the cart
-  document.querySelectorAll("[data-inc]").forEach(btn => btn.addEventListener("click", () => changeQty(btn.dataset.inc, 1)));
-  document.querySelectorAll("[data-dec]").forEach(btn => btn.addEventListener("click", () => changeQty(btn.dataset.dec, -1)));
-  document.querySelectorAll("[data-remove]").forEach(btn => btn.addEventListener("click", () => removeFromCart(btn.dataset.remove)));
-
-  // MANDATORY UNIT-CHANGE RULE: changing the unit of an item already in the
-  // cart removes it and resets quantity to 0 — never converts the number.
-  document.querySelectorAll("[data-unit-change]").forEach(sel => {
-    sel.addEventListener("change", () => changeUnit(sel.dataset.unitChange));
   });
 }
+
+// Keep bindProductCards as a no-op so existing call-sites don't break,
+// but all the real work is done by the delegated listeners above.
+function bindProductCards() {}
 
 // ---------------------------------------------------------------
 // CART OPERATIONS
@@ -443,9 +511,8 @@ function renderCart() {
 
   document.getElementById("cartItems").innerHTML = items || `<div class="empty">Your cart is empty.<br><br><a href="#shop" onclick="closeCart()">Start shopping</a></div>`;
 
-  document.querySelectorAll("[data-cart-inc]").forEach(b => b.onclick = () => changeQty(b.dataset.cartInc, 1));
-  document.querySelectorAll("[data-cart-dec]").forEach(b => b.onclick = () => changeQty(b.dataset.cartDec, -1));
-  document.querySelectorAll("[data-cart-remove]").forEach(b => b.onclick = () => removeFromCart(b.dataset.cartRemove));
+  // No listener re-attachment needed — cart buttons are handled by
+  // the delegated listener set up in bindProductEvents().
 
   updateSummary(
     selectedLocation && selectedLocation.distanceKm != null ? selectedLocation.distanceKm : null,
@@ -850,6 +917,18 @@ function openInfoPage(page) {
   const [title, body] = pages[page] || ["Information", "<p>Information unavailable.</p>"];
   document.getElementById("modalContent").innerHTML = `<h2>${title}</h2>${body}`;
   document.getElementById("pageModal").classList.add("open");
+}
+
+/**
+ * Called by the onerror attribute on product <img> tags.
+ * Hides the broken image and shows the emoji fallback instead.
+ */
+function handleProductImageError(img, name) {
+  img.style.display = "none";
+  const emoji = img.nextElementSibling;
+  if (emoji && emoji.classList.contains("emoji-img")) {
+    emoji.style.display = "";
+  }
 }
 
 function vegetableEmoji(name) {
