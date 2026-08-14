@@ -111,16 +111,106 @@ function bindUI() {
 // (no API key needed) and also work on GitHub Pages.
 // ---------------------------------------------------------------
 const DUMMY_PRODUCTS = [
-  { id:"d-1", name:"Tomato",     category:"Vegetables", price:40,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1546470427-e26264be0b11?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Fresh red tomatoes" },
-  { id:"d-2", name:"Potato",     category:"Vegetables", price:30,  priceUnit:"kg", quantityType:"weight", defaultQty:1,   defaultUnit:"kg",step:1,   minQty:1,   image:"https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Fresh potatoes" },
-  { id:"d-3", name:"Onion",      category:"Vegetables", price:35,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1508747703725-719777637510?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Red onions" },
-  { id:"d-4", name:"Carrot",     category:"Vegetables", price:50,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Crunchy carrots" },
-  { id:"d-5", name:"Spinach",    category:"Leafy",      price:20,  priceUnit:"kg", quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh spinach leaves" },
-  { id:"d-6", name:"Cabbage",    category:"Leafy",      price:25,  priceUnit:"kg", quantityType:"weight", defaultQty:1,   defaultUnit:"kg",step:1,   minQty:1,   image:"https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Farm fresh cabbage" },
-  { id:"d-7", name:"Broccoli",   category:"Vegetables", price:80,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Green broccoli florets" },
-  { id:"d-8", name:"Cucumber",   category:"Vegetables", price:30,  priceUnit:"kg", quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh cucumbers" },
-  { id:"d-9", name:"Coconut Oil",category:"Oils",       price:180, priceUnit:"L",  quantityType:"volume",  defaultQty:1,   defaultUnit:"L", step:1,   minQty:1,   image:"https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:true,  description:"Pure coconut oil" },
-  { id:"d-10",name:"Lemon",      category:"Fruits",     price:60,  priceUnit:"kg", quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250, image:"https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&q=80", defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh lemons" }
+  {
+    id:"d-1", name:"Tomato", category:"Vegetables", price:40, priceUnit:"kg",
+    quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
+    images:[
+      "https://images.unsplash.com/photo-1546470427-e26264be0b11?w=400&q=80",
+      "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&q=80",
+      "https://images.unsplash.com/photo-1561136594-7f68413baa99?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Fresh red tomatoes"
+  },
+  {
+    id:"d-2", name:"Potato", category:"Vegetables", price:30, priceUnit:"kg",
+    quantityType:"weight", defaultQty:1, defaultUnit:"kg", step:1, minQty:1,
+    images:[
+      "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80",
+      "https://images.unsplash.com/photo-1590165482129-1b8b27698780?w=400&q=80",
+      "https://images.unsplash.com/photo-1508313880080-c4bef0730395?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Fresh potatoes"
+  },
+  {
+    id:"d-3", name:"Onion", category:"Vegetables", price:35, priceUnit:"kg",
+    quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
+    images:[
+      "https://images.unsplash.com/photo-1508747703725-719777637510?w=400&q=80",
+      "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400&q=80",
+      "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Red onions"
+  },
+  {
+    id:"d-4", name:"Green Chilli", category:"Vegetables", price:80, priceUnit:"kg",
+    quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250,
+    images:[
+      "https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=400&q=80",
+      "https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?w=400&q=80",
+      "https://images.unsplash.com/photo-1548247416-ec66f4900b2e?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Fresh green chillies"
+  },
+  {
+    id:"d-5", name:"Spinach (Palak)", category:"Leafy", price:20, priceUnit:"kg",
+    quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250,
+    images:[
+      "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&q=80",
+      "https://images.unsplash.com/photo-1628773822503-930a7eaecf80?w=400&q=80",
+      "https://images.unsplash.com/photo-1600326145552-327f74035060?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh spinach leaves"
+  },
+  {
+    id:"d-6", name:"Cauliflower", category:"Vegetables", price:40, priceUnit:"kg",
+    quantityType:"weight", defaultQty:1, defaultUnit:"kg", step:1, minQty:1,
+    images:[
+      "https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=400&q=80",
+      "https://images.unsplash.com/photo-1510627489930-0c1b0bfb6785?w=400&q=80",
+      "https://images.unsplash.com/photo-1606788075761-c3e72c364b0e?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Farm fresh cauliflower"
+  },
+  {
+    id:"d-7", name:"Carrot", category:"Vegetables", price:50, priceUnit:"kg",
+    quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
+    images:[
+      "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80",
+      "https://images.unsplash.com/photo-1582515073490-39981397c445?w=400&q=80",
+      "https://images.unsplash.com/photo-1447175008436-054170c2e979?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Crunchy fresh carrots"
+  },
+  {
+    id:"d-8", name:"Cucumber", category:"Vegetables", price:30, priceUnit:"kg",
+    quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
+    images:[
+      "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&q=80",
+      "https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=400&q=80",
+      "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh cucumbers"
+  },
+  {
+    id:"d-9", name:"Cooking Oil", category:"Oils", price:180, priceUnit:"L",
+    quantityType:"volume", defaultQty:1, defaultUnit:"L", step:1, minQty:1,
+    images:[
+      "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&q=80",
+      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=80",
+      "https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Pure cooking oil"
+  },
+  {
+    id:"d-10", name:"Lemon", category:"Fruits", price:60, priceUnit:"kg",
+    quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250,
+    images:[
+      "https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&q=80",
+      "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&q=80",
+      "https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh lemons"
+  }
 ];
 
 function isLocalhost() {
@@ -204,9 +294,9 @@ function normalizeProduct(r) {
     defaultUnit: normalizeUnit(defaultUnit),
     step: step > 0 ? step : null,
     minQty: Number(r.min_qty || r.min_quantity || 0) || null,
-    // Supports the Google Sheet/Excel Image column (case-insensitive header
-    // normalization happens in parseCSV) and image_url as a fallback.
-    image: r.image || r.image_url || "",
+    // Supports up to 3 image columns: image1 (or image/image_url), image2, image3.
+    // All non-empty URLs are collected into an array; the slider uses them in order.
+    images: [r.image1 || r.image || r.image_url || "", r.image2 || "", r.image3 || ""].filter(Boolean),
     defaultImage: CONFIG.defaultProductImage,
     available: !["no","false","0","out of stock"].includes((r.available || "yes").toLowerCase()),
     featured: ["yes","true","1","latest","featured"].includes((r.featured || r.latest || "").toLowerCase()),
@@ -240,18 +330,22 @@ function renderProducts() {
     (selectedCategory === "All" || p.category === selectedCategory) &&
     (!query || `${p.name} ${p.category} ${p.description}`.toLowerCase().includes(query))
   );
+  stopAllSliderTimers();
   document.getElementById("productGrid").innerHTML = filtered.length
     ? filtered.map(productCard).join("")
     : `<div class="empty">No products found.</div>`;
   bindProductCards();
+  startSliderTimers();
 }
 
 function renderLatest() {
   const list = products.filter(p => p.featured).slice(0, 8);
+  stopAllSliderTimers();
   document.getElementById("latestGrid").innerHTML = list.length
     ? list.map(productCard).join("")
     : `<div class="empty">Mark products as <b>featured=yes</b> in Google Sheets to show them here.</div>`;
   bindProductCards();
+  startSliderTimers();
 }
 
 // ---------------------------------------------------------------
@@ -297,24 +391,47 @@ function cartItemFor(productId) { return cart.find(i => i.productId === productI
 // PRODUCT CARD
 // ---------------------------------------------------------------
 
+/** Build the image area — single img or a 3-slide carousel. */
+function productImageBlock(p) {
+  const imgs = p.images && p.images.length ? p.images : (p.defaultImage ? [p.defaultImage] : []);
+  if (!imgs.length) return `<span class="emoji-img">${vegetableEmoji(p.name)}</span>`;
+
+  if (imgs.length === 1) {
+    return `<img loading="lazy" src="${escapeAttr(imgs[0])}" alt="${escapeAttr(p.name)}"
+              onerror="handleProductImageError(this,'${escapeAttr(p.name)}')">
+            <span class="emoji-img" style="display:none">${vegetableEmoji(p.name)}</span>`;
+  }
+
+  // Multi-image slider
+  const slides = imgs.map((src, i) => `
+    <div class="slide${i === 0 ? " active" : ""}">
+      <img loading="lazy" src="${escapeAttr(src)}" alt="${escapeAttr(p.name)} ${i + 1}"
+           onerror="handleProductImageError(this,'${escapeAttr(p.name)}')">
+      <span class="emoji-img" style="display:none">${vegetableEmoji(p.name)}</span>
+    </div>`).join("");
+
+  const dots = imgs.map((_, i) =>
+    `<button class="slide-dot${i === 0 ? " active" : ""}" data-slide-dot="${i}" aria-label="Image ${i + 1}"></button>`
+  ).join("");
+
+  return `
+    <div class="slider" data-slider="${escapeAttr(p.id)}">
+      <div class="slides">${slides}</div>
+      <button class="slide-arrow slide-prev" data-slider-prev="${escapeAttr(p.id)}" aria-label="Previous image">‹</button>
+      <button class="slide-arrow slide-next" data-slider-next="${escapeAttr(p.id)}" aria-label="Next image">›</button>
+      <div class="slide-dots">${dots}</div>
+    </div>`;
+}
+
 function productCard(p) {
   const inCart = cartItemFor(p.id);
   const units = p.quantityType === "volume" ? ["ml", "L"] : ["g", "kg"];
   const defaults = getDefaultQuantity(p);
 
-  const imageSource = p.image || p.defaultImage;
-
-  const img = imageSource
-    ? `<img loading="lazy" src="${escapeAttr(imageSource)}" alt="${escapeAttr(p.name)}"
-         onerror="handleProductImageError(this, '${escapeAttr(p.name)}')">
-       <span class="emoji-img" style="display:none">${vegetableEmoji(p.name)}</span>`
-    : `<span class="emoji-img">${vegetableEmoji(p.name)}</span>`;
+  const img = productImageBlock(p);
 
   let qtyBlock;
   if (inCart) {
-    // Already in the cart: show a stepper on the CURRENT unit, plus a unit
-    // select. Changing that unit removes the item and resets qty to 0 —
-    // it never silently converts the number (see changeUnit()).
     qtyBlock = `
       <div class="in-cart-row"><span class="in-cart-badge">✓ In cart — ₹${money(lineTotal(p, inCart.qty, inCart.unit))}</span>
         <button class="remove-link" data-remove="${escapeAttr(p.id)}">Remove</button>
@@ -328,8 +445,6 @@ function productCard(p) {
         <button type="button" data-inc="${escapeAttr(p.id)}" aria-label="Increase quantity">+</button>
       </div>`;
   } else {
-    // Not yet in cart: pre-fill with the product's default quantity so the
-    // customer can press "Add to cart" immediately without typing anything.
     qtyBlock = `
       <div class="qty-line">
         <input class="qty-input" type="number" min="0" step="${stepFor(p, defaults.unit)}" value="${defaults.qty}" data-qty-field="${escapeAttr(p.id)}" aria-label="Quantity">
@@ -359,6 +474,63 @@ function productCard(p) {
 // "quantity doubles on every +/- click" bug.
 // ---------------------------------------------------------------
 
+// ---------------------------------------------------------------
+// SLIDER STATE & LOGIC
+// ---------------------------------------------------------------
+// One entry per product id: { index, timer }
+const sliderState = {};
+
+/**
+ * Move a slider to a specific slide index.
+ * Updates .active on both .slide elements and .slide-dot buttons.
+ */
+function sliderGoTo(productId, index) {
+  const el = document.querySelector(`[data-slider="${CSS.escape(productId)}"]`);
+  if (!el) return;
+  const slides = el.querySelectorAll(".slide");
+  const dots   = el.querySelectorAll(".slide-dot");
+  const count  = slides.length;
+  if (!count) return;
+
+  // Wrap around
+  const next = ((index % count) + count) % count;
+
+  slides.forEach((s, i) => s.classList.toggle("active", i === next));
+  dots.forEach((d, i)   => d.classList.toggle("active", i === next));
+
+  if (sliderState[productId]) sliderState[productId].index = next;
+}
+
+/** Start auto-advance timers for every slider currently in the DOM. */
+function startSliderTimers() {
+  document.querySelectorAll("[data-slider]").forEach(el => {
+    const pid = el.dataset.slider;
+    const count = el.querySelectorAll(".slide").length;
+    if (count < 2) return;
+
+    // Clear any existing timer so re-renders don't stack timers
+    stopSliderTimer(pid);
+
+    if (!sliderState[pid]) sliderState[pid] = { index: 0 };
+
+    sliderState[pid].timer = setInterval(() => {
+      sliderGoTo(pid, (sliderState[pid].index + 1));
+    }, 3000); // advance every 3 seconds
+  });
+}
+
+function stopSliderTimer(productId) {
+  if (sliderState[productId]?.timer) {
+    clearInterval(sliderState[productId].timer);
+    sliderState[productId].timer = null;
+  }
+}
+
+/** Stop ALL running slider timers (called before a full re-render). */
+function stopAllSliderTimers() {
+  Object.keys(sliderState).forEach(stopSliderTimer);
+}
+
 function bindProductEvents() {
   // Delegate from both grids and the cart drawer to catch all cards.
   ["productGrid", "latestGrid", "cartItems"].forEach(id => {
@@ -367,6 +539,47 @@ function bindProductEvents() {
 
     el.addEventListener("click", e => {
       const t = e.target;
+
+      // Slider: prev / next arrows
+      const prevId = t.closest("[data-slider-prev]")?.dataset.sliderPrev;
+      if (prevId) {
+        const cur = sliderState[prevId]?.index ?? 0;
+        sliderGoTo(prevId, cur - 1);
+        // Reset the auto-advance timer so it doesn't jump immediately after manual nav
+        stopSliderTimer(prevId);
+        if (sliderState[prevId]) {
+          const count = document.querySelector(`[data-slider="${CSS.escape(prevId)}"]`)?.querySelectorAll(".slide").length ?? 0;
+          if (count > 1) sliderState[prevId].timer = setInterval(() => sliderGoTo(prevId, (sliderState[prevId].index + 1)), 3000);
+        }
+        return;
+      }
+      const nextId = t.closest("[data-slider-next]")?.dataset.sliderNext;
+      if (nextId) {
+        const cur = sliderState[nextId]?.index ?? 0;
+        sliderGoTo(nextId, cur + 1);
+        stopSliderTimer(nextId);
+        if (sliderState[nextId]) {
+          const count = document.querySelector(`[data-slider="${CSS.escape(nextId)}"]`)?.querySelectorAll(".slide").length ?? 0;
+          if (count > 1) sliderState[nextId].timer = setInterval(() => sliderGoTo(nextId, (sliderState[nextId].index + 1)), 3000);
+        }
+        return;
+      }
+
+      // Slider: dot buttons
+      const dotBtn = t.closest("[data-slide-dot]");
+      if (dotBtn) {
+        const slider = dotBtn.closest("[data-slider]");
+        if (slider) {
+          const pid = slider.dataset.slider;
+          sliderGoTo(pid, Number(dotBtn.dataset.slideDot));
+          stopSliderTimer(pid);
+          if (sliderState[pid]) {
+            const count = slider.querySelectorAll(".slide").length;
+            if (count > 1) sliderState[pid].timer = setInterval(() => sliderGoTo(pid, (sliderState[pid].index + 1)), 3000);
+          }
+        }
+        return;
+      }
 
       // Add to cart button
       const addId = t.closest("[data-add]")?.dataset.add;
@@ -408,7 +621,6 @@ function bindProductEvents() {
         const card = t.closest(".product");
         const field = card.querySelector("[data-qty-field]");
         field.step  = stepFor(p, t.value);
-        // Reset to the product's default for the newly selected unit
         const defaults = getDefaultQuantity(p);
         field.value = (t.value === defaults.unit) ? defaults.qty : minFor(p, t.value);
         return;
@@ -547,8 +759,33 @@ function showCheckout() {
   document.getElementById("whatsappBtn").style.display = "block";
   // If the customer has not shared location yet, give them a clear button.
   updateLocationUI();
-  document.getElementById("cartDrawer").scrollTop = 0;
-  document.querySelector(".drawer-body").scrollTop = 0;
+
+  // Scroll the drawer body so the checkout form is visible, then
+  // highlight the first required field so the customer knows where to start.
+  const drawerBody = document.querySelector(".drawer-body");
+  const form = document.getElementById("checkoutForm");
+  requestAnimationFrame(() => {
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Also scroll the drawer itself in case scrollIntoView only moves the page
+    if (drawerBody) drawerBody.scrollTo({ top: form.offsetTop - 12, behavior: "smooth" });
+    highlightCheckoutFields();
+  });
+}
+
+/** Briefly pulse all empty required checkout fields so they stand out. */
+function highlightCheckoutFields() {
+  const fields = [
+    document.getElementById("customerName"),
+    document.getElementById("customerPhone"),
+    document.getElementById("deliveryAddress")
+  ];
+  fields.forEach(el => {
+    if (!el || el.value.trim()) return;   // skip already-filled fields
+    el.classList.remove("field-highlight");
+    void el.offsetWidth;                  // force reflow to restart animation
+    el.classList.add("field-highlight");
+    el.addEventListener("input", () => el.classList.remove("field-highlight"), { once: true });
+  });
 }
 
 // ---------------------------------------------------------------
@@ -912,7 +1149,7 @@ function openInfoPage(page) {
     privacy: ["Privacy Policy", `<p>Seba Fresh uses customer information only to process and deliver orders. Information entered on this website may include name, mobile number, delivery address, selected location and delivery instructions. The sale order is sent to Seba Fresh through WhatsApp when the customer chooses to submit it.</p><p>The product catalog is read from the published product sheet. Do not store private customer information in the public product sheet.</p>`],
     terms: ["Terms & Conditions", `<p>Product availability and prices are subject to confirmation by Seba Fresh. The website prepares a sale-order request; an order is considered confirmed only after Seba Fresh confirms it through WhatsApp or another agreed channel.</p><p>Displayed totals are calculated from the catalog available at the time of ordering. Final invoice details may be confirmed before delivery.</p>`],
     delivery: ["Delivery Information", `<p>Delivery is available within an approximate <b>10 km location radius</b> from the configured Seba Fresh location.</p><ul><li>Up to 5 km: free delivery.</li><li>More than 5 km and up to 10 km: ₹30 delivery charge.</li><li>More than 10 km: the website will not allow the sale order to be submitted.</li></ul><p>The website uses the customer's shared GPS coordinates and calculates an approximate straight-line distance. The WhatsApp order also includes a Google Maps link for delivery.</p>`],
-    refund: ["Cancellation / Refund", `<p>Because this is a fresh-product ordering service, cancellation and refund decisions should be handled by Seba Fresh based on the status of the sale order and delivery. Contact <b>6300614017</b> for support.</p>`]
+    refund: ["Cancellation / Refund", `<p>Because this is a fresh-product ordering service, cancellation and refund decisions should be handled by Seba Fresh based on the status of the sale order and delivery. Contact <b><a href="tel:+916300614017">📞 6300614017</a></b> or <a href="https://wa.me/916300614017" target="_blank" rel="noopener">💬 WhatsApp</a> for support.</p>`]
   };
   const [title, body] = pages[page] || ["Information", "<p>Information unavailable.</p>"];
   document.getElementById("modalContent").innerHTML = `<h2>${title}</h2>${body}`;
