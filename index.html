@@ -38,13 +38,35 @@
     .modal{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px}.modal.open{display:flex}.modal-card{background:#fff;border-radius:24px;width:min(700px,100%);max-height:90vh;overflow:auto;padding:22px}.close{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 10px;float:right}.modal h2{margin-top:0}
     .loading{padding:40px;text-align:center;color:var(--muted);grid-column:1/-1}.empty{padding:35px;text-align:center;color:var(--muted);grid-column:1/-1}
     .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--dark);color:#fff;padding:12px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s;z-index:100;font-size:13px}.toast.show{opacity:1;transform:translate(-50%,0)}
+    /* ---- Product image slider ---- */
+    .slider{position:relative;width:100%;height:100%;overflow:hidden;border-radius:0}
+    .slides{display:flex;width:100%;height:100%}
+    .slide{min-width:100%;height:100%;display:none;position:relative}
+    .slide.active{display:block}
+    .slide img{width:100%;height:100%;object-fit:cover;display:block}
+    .slide .emoji-img{position:absolute;inset:0;display:grid;place-items:center;font-size:78px}
+    /* Prev / next arrows */
+    .slide-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.82);border:none;border-radius:50%;width:28px;height:28px;font-size:18px;line-height:1;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;padding:0;color:var(--dark);box-shadow:0 2px 8px rgba(0,0,0,.15);transition:background .15s}
+    .slide-arrow:hover{background:#fff}
+    .slide-prev{left:7px}
+    .slide-next{right:7px}
+    /* Dot indicators */
+    .slide-dots{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2}
+    .slide-dot{width:7px;height:7px;border-radius:50%;border:none;background:rgba(255,255,255,.55);padding:0;cursor:pointer;transition:background .2s,transform .2s}
+    .slide-dot.active{background:#fff;transform:scale(1.25)}
+    /* Clickable phone / WhatsApp links */
+    .topbar-wa{color:#8fd4a5;text-decoration:none;font-weight:700}.topbar-wa:hover{color:#fff;text-decoration:underline}
+    .contact-link{color:inherit;text-decoration:underline;text-underline-offset:3px}
+    /* Pulse highlight for empty required checkout fields */
+    @keyframes fieldPulse{0%,100%{box-shadow:0 0 0 0 rgba(31,122,69,0)}40%{box-shadow:0 0 0 4px rgba(31,122,69,.45);border-color:var(--green)}}
+    .field-highlight{animation:fieldPulse .7s ease 3;border-color:var(--green)!important}
     @media(max-width:980px){.grid{grid-template-columns:repeat(3,1fr)}.how{grid-template-columns:repeat(3,1fr)}.hero-card:after{font-size:48px;max-width:35%}.feature-grid{grid-template-columns:1fr}}
     @media(max-width:720px){.container{width:min(100% - 20px,600px)}.topbar .container{font-size:11px}.navlinks{display:none}.menu-btn{display:block;margin-left:auto}.nav{min-height:62px}.brand strong{font-size:17px}.logo{width:38px;height:38px}.hero{padding-top:14px}.hero-card{min-height:470px;border-radius:24px}.hero-content{padding:30px 24px;align-self:start;margin-top:15px;max-width:100%}.hero h1{font-size:43px}.hero p{font-size:16px}.hero-card:after{display:none}.trust{grid-template-columns:1fr;gap:9px;margin-bottom:20px}.section{padding:30px 0}.section-head h2{font-size:25px}.grid{grid-template-columns:repeat(2,1fr);gap:10px}.product-body{padding:12px}.product h3{font-size:15px}.product-desc{font-size:11px}.price{font-size:16px}.qty-line{gap:5px}.qty-input{width:62px;padding:9px 6px}.unit-select{padding:9px 4px;font-size:12px}.add{padding:10px;font-size:12px}.how{grid-template-columns:1fr}.reviews{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}.footer-grid>div:first-child{grid-column:1/-1}}
     @media(max-width:420px){.hero h1{font-size:38px}.grid{gap:8px}.product-img{aspect-ratio:1/.92}.emoji-img{font-size:55px}.footer-grid{grid-template-columns:1fr}.footer-grid>div:first-child{grid-column:auto}}
   </style>
 </head>
 <body>
-  <div class="topbar"><div class="container"><span>Fresh vegetables • Local delivery</span><span>WhatsApp: 6300614017</span></div></div>
+  <div class="topbar"><div class="container"><span>Fresh vegetables • Local delivery</span><span><a class="topbar-wa" href="https://wa.me/916300614017" target="_blank" rel="noopener">💬 WhatsApp: 6300614017</a></span></div></div>
   <header><div class="container nav">
     <a class="brand" href="#home" aria-label="Seba Fresh home"><span class="logo">S</span><span><small>FRESH • LOCAL • SIMPLE</small><strong>SEBA FRESH</strong></span></a>
     <nav class="navlinks"><a href="#shop">Shop</a><a href="#how">How it works</a><a href="#reviews">Reviews</a><a href="#about">About</a></nav>
@@ -111,9 +133,9 @@
       </div>
     </section>
 
-    <section class="section container" id="about">
-      <div class="feature"><h3>About Seba Fresh</h3><p>Seba Fresh is a local fresh-vegetable ordering service focused on a simple customer experience: choose your products, select your delivery point, review the sale order and send it to WhatsApp.</p><p>For orders and delivery support, contact <b>6300614017</b>.</p></div>
-    </section>
+      <section class="section container" id="about">
+      <div class="feature"><h3>About Seba Fresh</h3><p>Seba Fresh is a local fresh-vegetable ordering service focused on a simple customer experience: choose your products, select your delivery point, review the sale order and send it to WhatsApp.</p><p>For orders and delivery support, contact <b><a class="contact-link" href="tel:+916300614017">📞 6300614017</a></b> or <b><a class="contact-link" href="https://wa.me/916300614017" target="_blank" rel="noopener">💬 WhatsApp</a></b>.</p></div>
+      </section>
   </main>
 
   <footer>
