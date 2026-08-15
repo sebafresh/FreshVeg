@@ -112,17 +112,19 @@ function bindUI() {
 // ---------------------------------------------------------------
 const DUMMY_PRODUCTS = [
   {
-    id:"d-1", name:"Tomato", category:"Vegetables", price:40, priceUnit:"kg",
+    id:"d-1", name:"Tomato", category:"Vegetables",
+    price:35, mrp:50, hasDeal:true, offPct:30, priceUnit:"kg",
     quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
     images:[
       "https://images.unsplash.com/photo-1546470427-e26264be0b11?w=400&q=80",
       "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&q=80",
       "https://images.unsplash.com/photo-1561136594-7f68413baa99?w=400&q=80"
     ],
-    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Fresh red tomatoes"
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Farm fresh red tomatoes"
   },
   {
-    id:"d-2", name:"Potato", category:"Vegetables", price:30, priceUnit:"kg",
+    id:"d-2", name:"Potato", category:"Vegetables",
+    price:28, mrp:40, hasDeal:true, offPct:30, priceUnit:"kg",
     quantityType:"weight", defaultQty:1, defaultUnit:"kg", step:1, minQty:1,
     images:[
       "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80",
@@ -132,7 +134,8 @@ const DUMMY_PRODUCTS = [
     defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Fresh potatoes"
   },
   {
-    id:"d-3", name:"Onion", category:"Vegetables", price:35, priceUnit:"kg",
+    id:"d-3", name:"Onion", category:"Vegetables",
+    price:35, mrp:0, hasDeal:false, offPct:0, priceUnit:"kg",
     quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
     images:[
       "https://images.unsplash.com/photo-1508747703725-719777637510?w=400&q=80",
@@ -142,7 +145,8 @@ const DUMMY_PRODUCTS = [
     defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Red onions"
   },
   {
-    id:"d-4", name:"Green Chilli", category:"Vegetables", price:80, priceUnit:"kg",
+    id:"d-4", name:"Green Chilli", category:"Vegetables",
+    price:60, mrp:100, hasDeal:true, offPct:40, priceUnit:"kg",
     quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250,
     images:[
       "https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=400&q=80",
@@ -152,7 +156,8 @@ const DUMMY_PRODUCTS = [
     defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Fresh green chillies"
   },
   {
-    id:"d-5", name:"Spinach (Palak)", category:"Leafy", price:20, priceUnit:"kg",
+    id:"d-5", name:"Spinach (Palak)", category:"Leafy",
+    price:20, mrp:0, hasDeal:false, offPct:0, priceUnit:"kg",
     quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250,
     images:[
       "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&q=80",
@@ -162,17 +167,19 @@ const DUMMY_PRODUCTS = [
     defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh spinach leaves"
   },
   {
-    id:"d-6", name:"Cauliflower", category:"Vegetables", price:40, priceUnit:"kg",
-    quantityType:"weight", defaultQty:1, defaultUnit:"kg", step:1, minQty:1,
+    id:"d-6", name:"Cauliflower", category:"Vegetables",
+    price:35, mrp:50, hasDeal:true, offPct:30, priceUnit:"pcs",
+    quantityType:"pcs", defaultQty:1, defaultUnit:"pcs", step:1, minQty:1,
     images:[
       "https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=400&q=80",
       "https://images.unsplash.com/photo-1510627489930-0c1b0bfb6785?w=400&q=80",
       "https://images.unsplash.com/photo-1606788075761-c3e72c364b0e?w=400&q=80"
     ],
-    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Farm fresh cauliflower"
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Farm fresh cauliflower — sold per piece"
   },
   {
-    id:"d-7", name:"Carrot", category:"Vegetables", price:50, priceUnit:"kg",
+    id:"d-7", name:"Carrot", category:"Vegetables",
+    price:50, mrp:0, hasDeal:false, offPct:0, priceUnit:"kg",
     quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
     images:[
       "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80",
@@ -182,17 +189,19 @@ const DUMMY_PRODUCTS = [
     defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Crunchy fresh carrots"
   },
   {
-    id:"d-8", name:"Cucumber", category:"Vegetables", price:30, priceUnit:"kg",
-    quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
+    id:"d-8", name:"Cucumber", category:"Vegetables",
+    price:25, mrp:35, hasDeal:true, offPct:29, priceUnit:"pcs",
+    quantityType:"pcs", defaultQty:2, defaultUnit:"pcs", step:1, minQty:1,
     images:[
       "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&q=80",
       "https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=400&q=80",
       "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400&q=80"
     ],
-    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh cucumbers"
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh cucumbers — sold per piece"
   },
   {
-    id:"d-9", name:"Cooking Oil", category:"Oils", price:180, priceUnit:"L",
+    id:"d-9", name:"Cooking Oil", category:"Oils",
+    price:160, mrp:200, hasDeal:true, offPct:20, priceUnit:"L",
     quantityType:"volume", defaultQty:1, defaultUnit:"L", step:1, minQty:1,
     images:[
       "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&q=80",
@@ -202,14 +211,15 @@ const DUMMY_PRODUCTS = [
     defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Pure cooking oil"
   },
   {
-    id:"d-10", name:"Lemon", category:"Fruits", price:60, priceUnit:"kg",
-    quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250,
+    id:"d-10", name:"Lemon", category:"Fruits",
+    price:5, mrp:8, hasDeal:true, offPct:38, priceUnit:"pcs",
+    quantityType:"pcs", defaultQty:6, defaultUnit:"pcs", step:1, minQty:1,
     images:[
       "https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&q=80",
       "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&q=80",
       "https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=400&q=80"
     ],
-    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh lemons"
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh lemons — sold per piece"
   }
 ];
 
@@ -278,28 +288,53 @@ function parseCSV(text) {
 }
 
 function normalizeProduct(r) {
-  const quantityType = (r.quantity_type || r.unittype || r.type || "weight").toLowerCase();
-  const defaultUnit = r.default_unit || r.quantity_unit || r.unit || (quantityType === "volume" ? CONFIG.globalVolume.unit : CONFIG.globalWeight.unit);
-  const priceUnit = r.price_unit || r.pricing_unit || (quantityType === "volume" ? "L" : "kg");
+  // quantity_type: "weight" | "volume" | "pcs"
+  const rawType = (r.quantity_type || r.unittype || r.type || "weight").toLowerCase();
+  const quantityType = rawType === "pcs" || rawType === "piece" || rawType === "pieces" ? "pcs"
+                     : rawType === "volume" ? "volume" : "weight";
+
+  const defaultUnit = r.default_unit || r.quantity_unit || r.unit
+    || (quantityType === "volume" ? CONFIG.globalVolume.unit
+      : quantityType === "pcs"   ? "pcs"
+      : CONFIG.globalWeight.unit);
+
+  const priceUnit = r.price_unit || r.pricing_unit
+    || (quantityType === "volume" ? "L"
+      : quantityType === "pcs"   ? "pcs"
+      : "kg");
+
   const defaultQty = Number(r.default_qty || r.default_quantity || 0);
-  const step = Number(r.step_qty || r.quantity_step || 0);
+  const step       = Number(r.step_qty    || r.quantity_step    || 0);
+
+  // Discount / MRP support.
+  // Sheet columns accepted:  mrp | actual_price | original_price
+  //                          price | discounted_price | sale_price
+  // Rule: if both mrp and price are present, price = sale price, mrp = crossed-out price.
+  //       if only price is present, no discount badge is shown.
+  const salePrice = Number(r.price || r.discounted_price || r.sale_price || 0);
+  const mrp       = Number(r.mrp   || r.actual_price    || r.original_price || 0);
+  // Only treat mrp as a real MRP if it is strictly greater than the sale price.
+  const hasDeal   = mrp > salePrice && salePrice > 0;
+  const offPct    = hasDeal ? Math.round((1 - salePrice / mrp) * 100) : 0;
+
   return {
     id: r.id || cryptoRandomId(),
     name: r.name || r.product || "",
     category: r.category || "Other",
-    price: Number(r.price || 0),
+    price:    salePrice,
+    mrp:      hasDeal ? mrp : 0,
+    offPct,
+    hasDeal,
     priceUnit,
-    quantityType: quantityType === "volume" ? "volume" : "weight",
+    quantityType,
     defaultQty: defaultQty > 0 ? defaultQty : null,
     defaultUnit: normalizeUnit(defaultUnit),
-    step: step > 0 ? step : null,
+    step:   step > 0 ? step : null,
     minQty: Number(r.min_qty || r.min_quantity || 0) || null,
-    // Supports up to 3 image columns: image1 (or image/image_url), image2, image3.
-    // All non-empty URLs are collected into an array; the slider uses them in order.
     images: [r.image1 || r.image || r.image_url || "", r.image2 || "", r.image3 || ""].filter(Boolean),
     defaultImage: CONFIG.defaultProductImage,
     available: !["no","false","0","out of stock"].includes((r.available || "yes").toLowerCase()),
-    featured: ["yes","true","1","latest","featured"].includes((r.featured || r.latest || "").toLowerCase()),
+    featured:  ["yes","true","1","latest","featured"].includes((r.featured || r.latest || "").toLowerCase()),
     description: r.description || ""
   };
 }
@@ -307,9 +342,10 @@ function normalizeProduct(r) {
 function normalizeUnit(u) {
   const x = String(u).trim().toLowerCase();
   if (x === "kg" || x === "kilogram" || x === "kilograms") return "kg";
-  if (x === "g" || x === "gram" || x === "grams") return "g";
-  if (x === "l" || x === "litre" || x === "liter" || x === "liters" || x === "litres") return "L";
+  if (x === "g"  || x === "gram"     || x === "grams")     return "g";
+  if (x === "l"  || x === "litre"    || x === "liter" || x === "liters" || x === "litres") return "L";
   if (x === "ml" || x === "millilitre" || x === "milliliter") return "ml";
+  if (x === "pcs" || x === "piece" || x === "pieces" || x === "pc") return "pcs";
   return u || "g";
 }
 
@@ -352,33 +388,39 @@ function renderLatest() {
 // QUANTITY / UNIT RULES
 // ---------------------------------------------------------------
 
-const UNIT_FACTOR = { g: 1, kg: 1000, ml: 1, L: 1000 };
+// pcs has a factor of 1 (price per piece = price per 1 pcs)
+const UNIT_FACTOR = { g: 1, kg: 1000, ml: 1, L: 1000, pcs: 1 };
 
 function toBaseQty(qty, unit) { return qty * (UNIT_FACTOR[unit] || 1); }
 
 /**
- * Step size for +/-. g/ml step by the product's own step_qty (Sheet
- * column) because 250g vs 50g makes sense per product. kg/L always
- * step by a whole unit (1 kg, 1 L) so the fine unit doesn't jump
- * around when someone is ordering by the big unit.
+ * Step size for +/-.
+ *  - pcs        → always 1 piece
+ *  - kg / L     → always 1
+ *  - g / ml     → product's step_qty or DEFAULT_BASE_STEP
  */
 function stepFor(p, unit) {
+  if (unit === "pcs") return 1;
   if (unit === "kg" || unit === "L") return 1;
   return p.step || CONFIG.DEFAULT_BASE_STEP;
 }
 
 function minFor(p, unit) {
+  if (unit === "pcs") return 1;
   if (unit === "kg" || unit === "L") return 1;
   return p.minQty || p.step || CONFIG.DEFAULT_BASE_MIN;
 }
 
 function getDefaultQuantity(p) {
   if (p.defaultQty && p.defaultUnit) return { qty: p.defaultQty, unit: p.defaultUnit };
-  return p.quantityType === "volume" ? CONFIG.globalVolume : CONFIG.globalWeight;
+  if (p.quantityType === "pcs")    return { qty: 1, unit: "pcs" };
+  if (p.quantityType === "volume") return CONFIG.globalVolume;
+  return CONFIG.globalWeight;
 }
 
 /** Price for a given qty+unit against a product's per-price_unit price. */
 function lineTotal(p, qty, unit) {
+  if (unit === "pcs") return Math.round(qty * p.price * 100) / 100;
   const base = toBaseQty(qty, unit);
   const priceUnitBase = UNIT_FACTOR[normalizeUnit(p.priceUnit)] || 1;
   const raw = (base / priceUnitBase) * p.price;
@@ -425,10 +467,27 @@ function productImageBlock(p) {
 
 function productCard(p) {
   const inCart = cartItemFor(p.id);
-  const units = p.quantityType === "volume" ? ["ml", "L"] : ["g", "kg"];
+  // pcs products only have one "unit"; weight/volume get the usual pair
+  const units = p.quantityType === "pcs"    ? ["pcs"]
+              : p.quantityType === "volume" ? ["ml", "L"]
+              : ["g", "kg"];
   const defaults = getDefaultQuantity(p);
 
   const img = productImageBlock(p);
+
+  // Price block — shows discount badge + strikethrough MRP when hasDeal
+  const priceBlock = p.hasDeal
+    ? `<div class="price-row">
+         <span class="badge-off">${p.offPct}% OFF</span>
+         <span class="price-sale">₹${money(p.price)}</span>
+         <span class="price-mrp">₹${money(p.mrp)}</span>
+         <small class="price-unit">/ ${escapeHTML(p.priceUnit)}</small>
+       </div>
+       <div class="price-saving">You save ₹${money(p.mrp - p.price)} per ${escapeHTML(p.priceUnit)}</div>`
+    : `<div class="price-row">
+         <span class="price-sale">₹${money(p.price)}</span>
+         <small class="price-unit">/ ${escapeHTML(p.priceUnit)}</small>
+       </div>`;
 
   let qtyBlock;
   if (inCart) {
@@ -439,18 +498,25 @@ function productCard(p) {
       <div class="stepper">
         <button type="button" data-dec="${escapeAttr(p.id)}" aria-label="Decrease quantity">−</button>
         <span class="qty-val">${formatNumber(inCart.qty)}</span>
-        <select data-unit-change="${escapeAttr(p.id)}" aria-label="Unit">
-          ${units.map(u => `<option value="${u}" ${u === inCart.unit ? "selected" : ""}>${u}</option>`).join("")}
-        </select>
+        ${units.length > 1
+          ? `<select data-unit-change="${escapeAttr(p.id)}" aria-label="Unit">
+               ${units.map(u => `<option value="${u}" ${u === inCart.unit ? "selected" : ""}>${u}</option>`).join("")}
+             </select>`
+          : `<span class="qty-unit-label">${units[0]}</span>`}
         <button type="button" data-inc="${escapeAttr(p.id)}" aria-label="Increase quantity">+</button>
       </div>`;
   } else {
     qtyBlock = `
       <div class="qty-line">
-        <input class="qty-input" type="number" min="0" step="${stepFor(p, defaults.unit)}" value="${defaults.qty}" data-qty-field="${escapeAttr(p.id)}" aria-label="Quantity">
-        <select class="unit-select" data-unit-pre="${escapeAttr(p.id)}" aria-label="Unit">
-          ${units.map(u => `<option value="${u}" ${u === defaults.unit ? "selected" : ""}>${u}</option>`).join("")}
-        </select>
+        <input class="qty-input" type="number" min="0"
+               step="${stepFor(p, defaults.unit)}"
+               value="${defaults.qty}"
+               data-qty-field="${escapeAttr(p.id)}" aria-label="Quantity">
+        ${units.length > 1
+          ? `<select class="unit-select" data-unit-pre="${escapeAttr(p.id)}" aria-label="Unit">
+               ${units.map(u => `<option value="${u}" ${u === defaults.unit ? "selected" : ""}>${u}</option>`).join("")}
+             </select>`
+          : `<span class="unit-fixed">${units[0]}</span>`}
       </div>
       <button class="add" data-add="${escapeAttr(p.id)}">Add to cart</button>`;
   }
@@ -461,7 +527,7 @@ function productCard(p) {
       <div class="product-category">${escapeHTML(p.category)}</div>
       <h3>${escapeHTML(p.name)}</h3>
       <div class="product-desc">${escapeHTML(p.description)}</div>
-      <div class="price">₹${money(p.price)} <small>/ ${escapeHTML(p.priceUnit)}</small></div>
+      ${priceBlock}
       ${qtyBlock}
     </div>
   </article>`;
@@ -757,8 +823,15 @@ function showCheckout() {
   document.getElementById("checkoutForm").style.display = "block";
   document.getElementById("checkoutBtn").style.display = "none";
   document.getElementById("whatsappBtn").style.display = "block";
-  // If the customer has not shared location yet, give them a clear button.
   updateLocationUI();
+
+  // Set delivery date default to today and block past dates
+  const dateEl = document.getElementById("deliveryDate");
+  if (dateEl) {
+    const today = new Date().toISOString().split("T")[0];
+    dateEl.min   = today;
+    if (!dateEl.value) dateEl.value = today;
+  }
 
   // Scroll the drawer body so the checkout form is visible, then
   // highlight the first required field so the customer knows where to start.
@@ -766,7 +839,6 @@ function showCheckout() {
   const form = document.getElementById("checkoutForm");
   requestAnimationFrame(() => {
     form.scrollIntoView({ behavior: "smooth", block: "start" });
-    // Also scroll the drawer itself in case scrollIntoView only moves the page
     if (drawerBody) drawerBody.scrollTo({ top: form.offsetTop - 12, behavior: "smooth" });
     highlightCheckoutFields();
   });
@@ -777,6 +849,7 @@ function highlightCheckoutFields() {
   const fields = [
     document.getElementById("customerName"),
     document.getElementById("customerPhone"),
+    document.getElementById("deliveryDate"),
     document.getElementById("deliveryAddress")
   ];
   fields.forEach(el => {
@@ -1035,31 +1108,33 @@ function highlightCheckoutFields() {
 // CHECKOUT / WHATSAPP
 // ---------------------------------------------------------------
 
+
 async function validateCheckout() {
-   const name = document.getElementById("customerName").value.trim();
+   const name  = document.getElementById("customerName").value.trim();
    const phone = document.getElementById("customerPhone").value.replace(/\D/g, "");
+   const dateEl = document.getElementById("deliveryDate");
+   const deliveryDate = dateEl ? dateEl.value : "";
    const address = document.getElementById("deliveryAddress").value.trim();
 
-   if (!name) return "Please enter your name.";
+   if (!name)  return "Please enter your name.";
    if (!/^[6-9]\d{9}$/.test(phone)) return "Please enter a valid 10-digit Indian mobile number.";
+   if (!deliveryDate) return "Please select a preferred delivery date.";
 
-   // If GPS was not shared, try to read coordinates from a Google Maps
-   // link pasted into Delivery instructions.
+   const today = new Date().toISOString().split("T")[0];
+   if (deliveryDate < today) return "Delivery date cannot be in the past.";
+
+   // If GPS was not shared, try to read coordinates from a Google Maps link
    if (!selectedLocation || selectedLocation.deliveryCharge === null) {
      const usedInstructionLocation = await useGoogleMapsInstructionLocation();
-
      if (!usedInstructionLocation) {
        highlightLocationButton();
-
        const btn = document.getElementById("shareLocationBtn");
        if (btn) btn.scrollIntoView({ behavior: "smooth", block: "center" });
-
-       return "We need your delivery location. Tap “Share My Current Location”, or paste a Google Maps location link in Delivery instructions.";
+       return "We need your delivery location. Tap \u201cShare My Current Location\u201d, or paste a Google Maps location link in Delivery instructions.";
      }
    }
 
    if (!address) return "Please enter the delivery address or landmark.";
-
    return "";
  }
 
@@ -1078,6 +1153,7 @@ async function validateCheckout() {
      }
 
      const name = document.getElementById("customerName").value.trim();
+      const deliveryDate = (document.getElementById("deliveryDate") || {}).value || "";
      const phone = document.getElementById("customerPhone").value.replace(/\D/g, "");
      const address = document.getElementById("deliveryAddress").value.trim();
      const instructions = document.getElementById("instructions").value.trim();
@@ -1102,6 +1178,7 @@ CUSTOMER DETAILS
 ━━━━━━━━━━━━━━━━━━━━━━━━
 👤 Name: ${name}
 📱 Mobile: ${phone}
+📅 Delivery Date: ${deliveryDate}
 
 ORDER ITEMS
 ━━━━━━━━━━━━━━━━━━━━━━━━
