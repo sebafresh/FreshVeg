@@ -114,7 +114,7 @@ const DUMMY_PRODUCTS = [
   {
     id:"d-1", name:"Tomato", category:"Vegetables",
     price:35, mrp:50, hasDeal:true, offPct:30, priceUnit:"kg",
-    quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250,
+    quantityType:"weight", defaultQty:500, defaultUnit:"g", step:250, minQty:250, maxQty:5000,
     images:[
       "https://images.unsplash.com/photo-1546470427-e26264be0b11?w=400&q=80",
       "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&q=80",
@@ -147,7 +147,7 @@ const DUMMY_PRODUCTS = [
   {
     id:"d-4", name:"Green Chilli", category:"Vegetables",
     price:60, mrp:100, hasDeal:true, offPct:40, priceUnit:"kg",
-    quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250,
+    quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250, maxQty:500,
     images:[
       "https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=400&q=80",
       "https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?w=400&q=80",
@@ -342,6 +342,9 @@ function normalizeProduct(r) {
     defaultUnit: normalizeUnit(defaultUnit),
     step:   step > 0 ? step : null,
     minQty: Number(r.min_qty || r.min_quantity || 0) || null,
+    // max_qty is in the same unit as default_unit (Option A).
+    // Blank / 0 means unlimited stock — no cap applied.
+    maxQty: Number(r.max_qty || r.max_quantity || r.stock || 0) || null,
     images: [r.image1 || r.image || r.image_url || "", r.image2 || "", r.image3 || ""].filter(Boolean),
     defaultImage: CONFIG.defaultProductImage,
     available: !["no","false","0","out of stock"].includes((r.available || "yes").toLowerCase()),
@@ -422,6 +425,34 @@ function minFor(p, unit) {
   return p.minQty || p.step || CONFIG.DEFAULT_BASE_MIN;
 }
 
+/**
+ * Maximum orderable quantity in the requested unit.
+ * maxQty is stored in default_unit (Option A).
+ * Returns null when no cap is set (unlimited).
+ */
+function maxFor(p, unit) {
+  if (!p.maxQty) return null;                        // unlimited
+  const defaultUnit = p.defaultUnit || "g";
+  if (unit === defaultUnit) return p.maxQty;         // same unit — direct
+
+  // Convert: both weight or both volume
+  const fromBase = UNIT_FACTOR[defaultUnit] || 1;
+  const toBase   = UNIT_FACTOR[unit]        || 1;
+  return Math.round((p.maxQty * fromBase / toBase) * 1000) / 1000;
+}
+
+/** Human-readable stock label in the most natural unit. */
+function stockLabel(p) {
+  if (!p.maxQty) return "";
+  const u   = p.defaultUnit || "g";
+  const qty = p.maxQty;
+  // For weight: show in kg if ≥ 1000g
+  if ((u === "g") && qty >= 1000) return `${formatNumber(qty / 1000)} kg`;
+  // For ml: show in L if ≥ 1000ml
+  if ((u === "ml") && qty >= 1000) return `${formatNumber(qty / 1000)} L`;
+  return `${formatNumber(qty)} ${u}`;
+}
+
 function getDefaultQuantity(p) {
   if (p.defaultQty && p.defaultUnit) return { qty: p.defaultQty, unit: p.defaultUnit };
   if (p.quantityType === "pcs")    return { qty: 1, unit: "pcs" };
@@ -474,6 +505,7 @@ function attractiveUnitPrice(p) {
 function qtyStepperWidget(p, selQty, selUnit) {
   const step = stepFor(p, selUnit);
   const min  = minFor(p, selUnit);
+  const max  = maxFor(p, selUnit);   // null = unlimited
 
   // Unit toggle buttons (only for weight/volume)
   let unitToggle = "";
@@ -489,9 +521,18 @@ function qtyStepperWidget(p, selQty, selUnit) {
     </div>`;
   }
 
-  // Hint line
   const unitLabel = p.quantityType === "pcs" ? "pcs" : selUnit;
-  const hint = `<div class="qty-hint">Min ${min} ${unitLabel} • steps of ${step} ${unitLabel}</div>`;
+
+  // Stock hint line — orange warning when limited, nothing when unlimited
+  const label = stockLabel(p);
+  const stockHint = label
+    ? `<div class="stock-hint ${p.maxQty <= (p.step || 500) ? "stock-low" : ""}">
+         🛒 Only ${label} available today
+       </div>`
+    : "";
+
+  // Hint line (min / step)
+  const hint = `<div class="qty-hint">Min ${min} ${unitLabel} • steps of ${step} ${unitLabel}${max ? ` • max ${formatNumber(max)} ${unitLabel}` : ""}</div>`;
 
   return `<div class="qty-stepper" data-stepper="${escapeAttr(p.id)}">
     <button type="button" class="qs-btn" data-qs-dec="${escapeAttr(p.id)}" aria-label="Decrease">−</button>
@@ -499,12 +540,14 @@ function qtyStepperWidget(p, selQty, selUnit) {
             type="number"
             min="${min}"
             step="${step}"
-            value="${selQty}"
+            ${max !== null ? `max="${max}"` : ""}
+            value="${Math.min(selQty, max ?? selQty)}"
             data-qty-field="${escapeAttr(p.id)}"
             aria-label="Quantity">
     ${unitToggle || `<span class="qs-unit-label">pcs</span>`}
     <button type="button" class="qs-btn" data-qs-inc="${escapeAttr(p.id)}" aria-label="Increase">+</button>
   </div>
+  ${stockHint}
   ${hint}
   <input type="hidden" data-unit-pre="${escapeAttr(p.id)}" value="${escapeAttr(selUnit)}">`;
 }
@@ -565,7 +608,10 @@ function productCard(p) {
        ${subPrice}`;
 
   let qtyBlock;
-  if (inCart) {
+  if (p.maxQty === 0) {
+    // Explicitly set to 0 → out of stock today
+    qtyBlock = `<div class="out-of-stock-badge">⊘ Out of stock today</div>`;
+  } else if (inCart) {
     // In-cart stepper — keeps the unit label, no dropdown
     qtyBlock = `
       <div class="in-cart-row">
@@ -734,13 +780,20 @@ function bindProductEvents() {
       if (qsIncId) {
         const stepper = t.closest("[data-stepper]") || document.querySelector(`[data-stepper="${CSS.escape(qsIncId)}"]`);
         if (stepper) {
-          const input = stepper.querySelector(`[data-qty-field="${CSS.escape(qsIncId)}"]`);
+          const input  = stepper.querySelector(`[data-qty-field="${CSS.escape(qsIncId)}"]`);
           const unitEl = t.closest(".product")?.querySelector(`[data-unit-pre="${CSS.escape(qsIncId)}"]`);
-          const p = products.find(x => x.id === qsIncId);
+          const p      = products.find(x => x.id === qsIncId);
           if (input && p) {
-            const unit = unitEl ? unitEl.value : (p.quantityType === "pcs" ? "pcs" : "g");
-            const step = stepFor(p, unit);
-            input.value = Math.round((Number(input.value) + step) * 1000) / 1000;
+            const unit   = unitEl ? unitEl.value : (p.quantityType === "pcs" ? "pcs" : "g");
+            const step   = stepFor(p, unit);
+            const max    = maxFor(p, unit);
+            const newVal = Math.round((Number(input.value) + step) * 1000) / 1000;
+            if (max !== null && newVal > max) {
+              toast(`Only ${formatNumber(max)} ${unit} available today`);
+              input.value = max;
+            } else {
+              input.value = newVal;
+            }
           }
         }
         return;
@@ -767,13 +820,22 @@ function bindProductEvents() {
           const input = card.querySelector(`[data-qty-field="${CSS.escape(pid)}"]`);
           if (p && input) {
             const min  = minFor(p, newUnit);
+            const max  = maxFor(p, newUnit);
             const step = stepFor(p, newUnit);
             input.min   = min;
             input.step  = step;
-            input.value = min;
+            if (max !== null) input.max = max; else input.removeAttribute("max");
+            input.value = Math.min(min, max ?? min);
             // Update hint text
             const hint = card.querySelector(".qty-hint");
-            if (hint) hint.textContent = `Min ${min} ${newUnit} • steps of ${step} ${newUnit}`;
+            if (hint) hint.textContent = `Min ${min} ${newUnit} • steps of ${step} ${newUnit}${max ? ` • max ${formatNumber(max)} ${newUnit}` : ""}`;
+            // Update stock hint
+            const stockHint = card.querySelector(".stock-hint");
+            if (stockHint) {
+              const label = stockLabel(p);
+              stockHint.textContent = label ? `🛒 Only ${label} available today` : "";
+              stockHint.style.display = label ? "" : "none";
+            }
           }
         }
         return;
@@ -841,7 +903,13 @@ function bindProductCards() {}
 
 function addToCart(p, qty, unit) {
   const min = minFor(p, unit);
+  const max = maxFor(p, unit);
+
   if (!qty || qty < min) return toast(`Minimum quantity is ${min} ${unit}`);
+  if (max !== null && qty > max) {
+    toast(`Only ${formatNumber(max)} ${unit} available. Quantity adjusted.`);
+    qty = max;
+  }
 
   const existing = cartItemFor(p.id);
   if (existing) { existing.qty = qty; existing.unit = unit; }
@@ -860,16 +928,21 @@ function removeFromCart(productId) {
   renderCart();
 }
 
-/** +/- respects the CURRENT unit's own step/min (see stepFor/minFor). */
+/** +/- respects the CURRENT unit's own step/min/max (see stepFor/minFor/maxFor). */
 function changeQty(productId, direction) {
   const item = cartItemFor(productId);
   if (!item) return;
-  const p = products.find(x => x.id === productId);
+  const p    = products.find(x => x.id === productId);
   const step = stepFor(p, item.unit);
-  const min = minFor(p, item.unit);
+  const min  = minFor(p, item.unit);
+  const max  = maxFor(p, item.unit);
   const newQty = direction > 0 ? item.qty + step : item.qty - step;
 
   if (newQty < min) { removeFromCart(productId); return; }
+  if (max !== null && newQty > max) {
+    toast(`Only ${formatNumber(max)} ${item.unit} available`);
+    return;
+  }
   item.qty = Math.round(newQty * 1000) / 1000;
   renderProducts();
   renderLatest();
