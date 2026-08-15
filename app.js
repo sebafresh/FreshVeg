@@ -220,6 +220,17 @@ const DUMMY_PRODUCTS = [
       "https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=400&q=80"
     ],
     defaultImage:CONFIG.defaultProductImage, available:true, featured:false, description:"Fresh lemons — sold per piece"
+  },
+  {
+    id:"d-11", name:"Drumstick", category:"Vegetables",
+    price:60, mrp:80, hasDeal:true, offPct:25, priceUnit:"kg",
+    quantityType:"weight", defaultQty:250, defaultUnit:"g", step:250, minQty:250,
+    images:[
+      "https://images.unsplash.com/photo-1622542086073-dca4a5b9e01d?w=400&q=80",
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80",
+      "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&q=80"
+    ],
+    defaultImage:CONFIG.defaultProductImage, available:true, featured:true, description:"Fresh drumsticks (Moringa)"
   }
 ];
 
@@ -433,6 +444,71 @@ function cartItemFor(productId) { return cart.find(i => i.productId === productI
 // PRODUCT CARD
 // ---------------------------------------------------------------
 
+/**
+ * For weight products priced per kg, return an attractive small-pack price.
+ * e.g. ₹50/kg → "₹12.50 for 250 g"
+ * Returns empty string for pcs / volume products.
+ */
+function attractiveUnitPrice(p) {
+  if (p.quantityType !== "weight") return "";
+  const pricePerKg = (normalizeUnit(p.priceUnit) === "kg") ? p.price
+                   : (normalizeUnit(p.priceUnit) === "g")  ? p.price * 1000
+                   : 0;
+  if (!pricePerKg) return "";
+  const displayG   = (p.step && p.step < 1000) ? p.step : 250;
+  const priceForQty = Math.round((displayG / 1000) * pricePerKg * 100) / 100;
+  return `<div class="price-per-g">Just ₹${money(priceForQty)} for ${displayG} g</div>`;
+}
+
+/**
+ * Smart quantity stepper — replaces the old quick-pick buttons and dropdown.
+ *
+ * Shows:  [−]  [number input]  [unit toggle g|kg]  [+]
+ *         Min 250 g • steps of 250 g
+ *
+ * - Customer can type any value freely (e.g. 350 g)
+ * - −/+ step by step_qty from the sheet
+ * - Unit toggle (g ↔ kg or ml ↔ L) resets qty to min for that unit
+ * - pcs products just show the input with no unit toggle
+ */
+function qtyStepperWidget(p, selQty, selUnit) {
+  const step = stepFor(p, selUnit);
+  const min  = minFor(p, selUnit);
+
+  // Unit toggle buttons (only for weight/volume)
+  let unitToggle = "";
+  if (p.quantityType === "weight") {
+    unitToggle = `<div class="unit-toggle">
+      <button type="button" class="utog${selUnit === "g"  ? " active" : ""}" data-utog="${escapeAttr(p.id)}" data-utog-unit="g">g</button>
+      <button type="button" class="utog${selUnit === "kg" ? " active" : ""}" data-utog="${escapeAttr(p.id)}" data-utog-unit="kg">kg</button>
+    </div>`;
+  } else if (p.quantityType === "volume") {
+    unitToggle = `<div class="unit-toggle">
+      <button type="button" class="utog${selUnit === "ml" ? " active" : ""}" data-utog="${escapeAttr(p.id)}" data-utog-unit="ml">ml</button>
+      <button type="button" class="utog${selUnit === "L"  ? " active" : ""}" data-utog="${escapeAttr(p.id)}" data-utog-unit="L">L</button>
+    </div>`;
+  }
+
+  // Hint line
+  const unitLabel = p.quantityType === "pcs" ? "pcs" : selUnit;
+  const hint = `<div class="qty-hint">Min ${min} ${unitLabel} • steps of ${step} ${unitLabel}</div>`;
+
+  return `<div class="qty-stepper" data-stepper="${escapeAttr(p.id)}">
+    <button type="button" class="qs-btn" data-qs-dec="${escapeAttr(p.id)}" aria-label="Decrease">−</button>
+    <input  class="qs-input"
+            type="number"
+            min="${min}"
+            step="${step}"
+            value="${selQty}"
+            data-qty-field="${escapeAttr(p.id)}"
+            aria-label="Quantity">
+    ${unitToggle || `<span class="qs-unit-label">pcs</span>`}
+    <button type="button" class="qs-btn" data-qs-inc="${escapeAttr(p.id)}" aria-label="Increase">+</button>
+  </div>
+  ${hint}
+  <input type="hidden" data-unit-pre="${escapeAttr(p.id)}" value="${escapeAttr(selUnit)}">`;
+}
+
 /** Build the image area — single img or a 3-slide carousel. */
 function productImageBlock(p) {
   const imgs = p.images && p.images.length ? p.images : (p.defaultImage ? [p.defaultImage] : []);
@@ -444,7 +520,6 @@ function productImageBlock(p) {
             <span class="emoji-img" style="display:none">${vegetableEmoji(p.name)}</span>`;
   }
 
-  // Multi-image slider
   const slides = imgs.map((src, i) => `
     <div class="slide${i === 0 ? " active" : ""}">
       <img loading="lazy" src="${escapeAttr(src)}" alt="${escapeAttr(p.name)} ${i + 1}"
@@ -466,16 +541,14 @@ function productImageBlock(p) {
 }
 
 function productCard(p) {
-  const inCart = cartItemFor(p.id);
-  // pcs products only have one "unit"; weight/volume get the usual pair
-  const units = p.quantityType === "pcs"    ? ["pcs"]
-              : p.quantityType === "volume" ? ["ml", "L"]
-              : ["g", "kg"];
+  const inCart   = cartItemFor(p.id);
   const defaults = getDefaultQuantity(p);
+  const img      = productImageBlock(p);
 
-  const img = productImageBlock(p);
+  // Attractive small-pack price line (weight products only)
+  const subPrice = attractiveUnitPrice(p);
 
-  // Price block — shows discount badge + strikethrough MRP when hasDeal
+  // Price block
   const priceBlock = p.hasDeal
     ? `<div class="price-row">
          <span class="badge-off">${p.offPct}% OFF</span>
@@ -483,41 +556,31 @@ function productCard(p) {
          <span class="price-mrp">₹${money(p.mrp)}</span>
          <small class="price-unit">/ ${escapeHTML(p.priceUnit)}</small>
        </div>
-       <div class="price-saving">You save ₹${money(p.mrp - p.price)} per ${escapeHTML(p.priceUnit)}</div>`
+       ${subPrice}
+       <div class="price-saving">Save ₹${money(p.mrp - p.price)} per ${escapeHTML(p.priceUnit)}</div>`
     : `<div class="price-row">
          <span class="price-sale">₹${money(p.price)}</span>
          <small class="price-unit">/ ${escapeHTML(p.priceUnit)}</small>
-       </div>`;
+       </div>
+       ${subPrice}`;
 
   let qtyBlock;
   if (inCart) {
+    // In-cart stepper — keeps the unit label, no dropdown
     qtyBlock = `
-      <div class="in-cart-row"><span class="in-cart-badge">✓ In cart — ₹${money(lineTotal(p, inCart.qty, inCart.unit))}</span>
+      <div class="in-cart-row">
+        <span class="in-cart-badge">✓ In cart — ₹${money(lineTotal(p, inCart.qty, inCart.unit))}</span>
         <button class="remove-link" data-remove="${escapeAttr(p.id)}">Remove</button>
       </div>
       <div class="stepper">
-        <button type="button" data-dec="${escapeAttr(p.id)}" aria-label="Decrease quantity">−</button>
-        <span class="qty-val">${formatNumber(inCart.qty)}</span>
-        ${units.length > 1
-          ? `<select data-unit-change="${escapeAttr(p.id)}" aria-label="Unit">
-               ${units.map(u => `<option value="${u}" ${u === inCart.unit ? "selected" : ""}>${u}</option>`).join("")}
-             </select>`
-          : `<span class="qty-unit-label">${units[0]}</span>`}
-        <button type="button" data-inc="${escapeAttr(p.id)}" aria-label="Increase quantity">+</button>
+        <button type="button" data-dec="${escapeAttr(p.id)}" aria-label="Decrease">−</button>
+        <span class="qty-val">${formatNumber(inCart.qty)} ${escapeHTML(inCart.unit)}</span>
+        <button type="button" data-inc="${escapeAttr(p.id)}" aria-label="Increase">+</button>
       </div>`;
   } else {
+    // Not in cart — smart stepper widget
     qtyBlock = `
-      <div class="qty-line">
-        <input class="qty-input" type="number" min="0"
-               step="${stepFor(p, defaults.unit)}"
-               value="${defaults.qty}"
-               data-qty-field="${escapeAttr(p.id)}" aria-label="Quantity">
-        ${units.length > 1
-          ? `<select class="unit-select" data-unit-pre="${escapeAttr(p.id)}" aria-label="Unit">
-               ${units.map(u => `<option value="${u}" ${u === defaults.unit ? "selected" : ""}>${u}</option>`).join("")}
-             </select>`
-          : `<span class="unit-fixed">${units[0]}</span>`}
-      </div>
+      ${qtyStepperWidget(p, defaults.qty, defaults.unit)}
       <button class="add" data-add="${escapeAttr(p.id)}">Add to cart</button>`;
   }
 
@@ -642,6 +705,75 @@ function bindProductEvents() {
           if (sliderState[pid]) {
             const count = slider.querySelectorAll(".slide").length;
             if (count > 1) sliderState[pid].timer = setInterval(() => sliderGoTo(pid, (sliderState[pid].index + 1)), 3000);
+          }
+        }
+        return;
+      }
+
+      // Smart qty stepper: − button
+      const qsDecId = t.closest("[data-qs-dec]")?.dataset.qsDec;
+      if (qsDecId) {
+        const stepper = t.closest("[data-stepper]") || document.querySelector(`[data-stepper="${CSS.escape(qsDecId)}"]`);
+        if (stepper) {
+          const input = stepper.querySelector(`[data-qty-field="${CSS.escape(qsDecId)}"]`);
+          const unitEl = t.closest(".product")?.querySelector(`[data-unit-pre="${CSS.escape(qsDecId)}"]`);
+          const p = products.find(x => x.id === qsDecId);
+          if (input && p) {
+            const unit = unitEl ? unitEl.value : (p.quantityType === "pcs" ? "pcs" : "g");
+            const step = stepFor(p, unit);
+            const min  = minFor(p, unit);
+            const newVal = Math.max(min, Number(input.value) - step);
+            input.value = Math.round(newVal * 1000) / 1000;
+          }
+        }
+        return;
+      }
+
+      // Smart qty stepper: + button
+      const qsIncId = t.closest("[data-qs-inc]")?.dataset.qsInc;
+      if (qsIncId) {
+        const stepper = t.closest("[data-stepper]") || document.querySelector(`[data-stepper="${CSS.escape(qsIncId)}"]`);
+        if (stepper) {
+          const input = stepper.querySelector(`[data-qty-field="${CSS.escape(qsIncId)}"]`);
+          const unitEl = t.closest(".product")?.querySelector(`[data-unit-pre="${CSS.escape(qsIncId)}"]`);
+          const p = products.find(x => x.id === qsIncId);
+          if (input && p) {
+            const unit = unitEl ? unitEl.value : (p.quantityType === "pcs" ? "pcs" : "g");
+            const step = stepFor(p, unit);
+            input.value = Math.round((Number(input.value) + step) * 1000) / 1000;
+          }
+        }
+        return;
+      }
+
+      // Unit toggle (g ↔ kg, ml ↔ L)
+      const utogBtn = t.closest("[data-utog]");
+      if (utogBtn) {
+        const pid     = utogBtn.dataset.utog;
+        const newUnit = utogBtn.dataset.utogUnit;
+        const card    = t.closest(".product");
+        if (card) {
+          // Update hidden unit field
+          const unitHidden = card.querySelector(`[data-unit-pre="${CSS.escape(pid)}"]`);
+          if (unitHidden) unitHidden.value = newUnit;
+
+          // Update active state on toggle buttons
+          card.querySelectorAll(`[data-utog="${CSS.escape(pid)}"]`).forEach(b => {
+            b.classList.toggle("active", b.dataset.utogUnit === newUnit);
+          });
+
+          // Reset qty input to min for the new unit
+          const p     = products.find(x => x.id === pid);
+          const input = card.querySelector(`[data-qty-field="${CSS.escape(pid)}"]`);
+          if (p && input) {
+            const min  = minFor(p, newUnit);
+            const step = stepFor(p, newUnit);
+            input.min   = min;
+            input.step  = step;
+            input.value = min;
+            // Update hint text
+            const hint = card.querySelector(".qty-hint");
+            if (hint) hint.textContent = `Min ${min} ${newUnit} • steps of ${step} ${newUnit}`;
           }
         }
         return;
@@ -831,10 +963,11 @@ function showCheckout() {
     const today = new Date().toISOString().split("T")[0];
     dateEl.min   = today;
     if (!dateEl.value) dateEl.value = today;
+    // Show/hide price disclaimer whenever the date changes
+    dateEl.addEventListener("change", updatePriceDisclaimer, { once: false });
   }
+  updatePriceDisclaimer();
 
-  // Scroll the drawer body so the checkout form is visible, then
-  // highlight the first required field so the customer knows where to start.
   const drawerBody = document.querySelector(".drawer-body");
   const form = document.getElementById("checkoutForm");
   requestAnimationFrame(() => {
@@ -842,6 +975,31 @@ function showCheckout() {
     if (drawerBody) drawerBody.scrollTo({ top: form.offsetTop - 12, behavior: "smooth" });
     highlightCheckoutFields();
   });
+}
+
+/**
+ * Shows a red disclaimer banner when the selected delivery date is in the
+ * future (i.e. advance order). Hidden for same-day orders.
+ */
+function updatePriceDisclaimer() {
+  const dateEl = document.getElementById("deliveryDate");
+  let banner   = document.getElementById("priceDisclaimerBanner");
+
+  // Create the banner element once if it doesn't exist yet
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "priceDisclaimerBanner";
+    banner.className = "price-disclaimer";
+    banner.innerHTML = `⚠️ <b>Price note:</b> This is an advance order. Final prices will be confirmed at delivery based on current market rates. <b>Price variation may apply.</b>`;
+    // Insert it right before the WhatsApp button
+    const waBtn = document.getElementById("whatsappBtn");
+    if (waBtn) waBtn.parentNode.insertBefore(banner, waBtn);
+  }
+
+  if (!dateEl) { banner.style.display = "none"; return; }
+  const today    = new Date().toISOString().split("T")[0];
+  const isFuture = dateEl.value > today;
+  banner.style.display = isFuture ? "block" : "none";
 }
 
 /** Briefly pulse all empty required checkout fields so they stand out. */
@@ -1208,7 +1366,9 @@ ${instructions}
 
 ` : ""}━━━━━━━━━━━━━━━━━━━━━━━━
 Please confirm the sale order.
-
+${deliveryDate > new Date().toISOString().split("T")[0]
+  ? `\n⚠️ PRICE NOTE: This order is placed in advance. Final prices will be confirmed at the time of delivery based on current market rates. Price variation may apply.\n`
+  : ""}
 Thank you for choosing Seba Fresh 🥬
 📱 WhatsApp: 6300614017`;
 
@@ -1259,6 +1419,11 @@ function vegetableEmoji(name) {
   if (n.includes("cucumber")) return "🥒";
   if (n.includes("lemon")) return "🍋";
   if (n.includes("ginger")) return "🫚";
+  if (n.includes("drumstick") || n.includes("moringa") || n.includes("murungai")) return "🌿";
+  if (n.includes("cauliflower")) return "🥦";
+  if (n.includes("spinach") || n.includes("palak")) return "🥬";
+  if (n.includes("pumpkin") || n.includes("gourd")) return "🎃";
+  if (n.includes("beetroot") || n.includes("beet")) return "🫛";
   return "🥬";
 }
 function money(n) { return Number(n || 0).toLocaleString("en-IN", {minimumFractionDigits:2, maximumFractionDigits:2}); }
