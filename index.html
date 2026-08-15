@@ -34,6 +34,21 @@
     .price-saving{font-size:11px;color:#1a7a3a;font-weight:700;margin-bottom:4px}
     /* ---- pcs unit label (no dropdown) ---- */
     .unit-fixed,.qty-unit-label{background:#eef5ef;border-radius:9px;padding:6px 10px;font-size:13px;font-weight:800;color:var(--green);white-space:nowrap}
+    /* ---- Smart qty stepper ---- */
+    .qty-stepper{display:flex;align-items:center;gap:5px;margin:10px 0 3px}
+    .qs-btn{width:34px;height:34px;border:1.5px solid var(--line);border-radius:10px;background:#fff;font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .15s,background .15s}
+    .qs-btn:hover{border-color:var(--green);background:#eef5ef;color:var(--green)}
+    .qs-input{width:64px;border:1.5px solid var(--line);border-radius:10px;padding:7px 6px;font-size:14px;font-weight:800;text-align:center;outline:none;min-width:0}
+    .qs-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(31,122,69,.1)}
+    /* Unit toggle g/kg ml/L */
+    .unit-toggle{display:flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;flex-shrink:0}
+    .utog{border:none;background:#fff;padding:6px 9px;font-size:12px;font-weight:900;cursor:pointer;color:var(--muted);transition:background .15s,color .15s}
+    .utog.active{background:var(--green);color:#fff}
+    .qs-unit-label{font-size:12px;font-weight:800;color:var(--green);background:#eef5ef;border-radius:9px;padding:6px 10px;white-space:nowrap}
+    /* Hint line */
+    .qty-hint{font-size:11px;color:var(--muted);margin-bottom:6px}
+    /* ---- Attractive per-gram price ---- */
+    .price-per-g{font-size:12px;font-weight:800;color:var(--green);background:#e8f9ee;border-radius:8px;padding:3px 8px;display:inline-block;margin:2px 0 4px}
     .qty-line{display:flex;gap:7px;align-items:center;margin-top:10px}.qty-input{width:76px;border:1px solid var(--line);border-radius:10px;padding:10px}.unit-select{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}.add{width:100%;margin-top:10px;border:0;background:var(--dark);color:#fff;border-radius:12px;padding:11px;font-weight:900}.sold{color:var(--danger);font-weight:800;font-size:13px}
     /* --- in-cart stepper (replaces qty-line once a product is added) --- */
     .stepper{display:flex;align-items:center;gap:6px;margin-top:10px;background:#eef5ef;border-radius:12px;padding:5px}.stepper button{width:32px;height:32px;border:0;border-radius:9px;background:var(--green);color:#fff;font-weight:900;font-size:16px;line-height:1}.stepper button:hover{background:var(--green2)}.stepper .qty-val{flex:1;text-align:center;font-weight:900}.stepper select{border:1px solid var(--line);border-radius:9px;padding:6px;background:#fff;font-size:12px}
@@ -69,6 +84,8 @@
     /* Delivery date input */
     .form input[type="date"]{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;outline:none;font:inherit;color:var(--dark);background:#fff;cursor:pointer}
     .form input[type="date"]:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(31,122,69,.12)}
+    /* Price variation disclaimer banner (future orders) */
+    .price-disclaimer{display:none;background:#fff3f3;border:1.5px solid #f5c2c2;border-radius:14px;padding:13px 16px;font-size:13px;color:#b42318;margin:10px 0;line-height:1.5}
     /* Pulse highlight for empty required checkout fields */
     @keyframes fieldPulse{0%,100%{box-shadow:0 0 0 0 rgba(31,122,69,0)}40%{box-shadow:0 0 0 4px rgba(31,122,69,.45);border-color:var(--green)}}
     .field-highlight{animation:fieldPulse .7s ease 3;border-color:var(--green)!important}
