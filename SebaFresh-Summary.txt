@@ -1,0 +1,317 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SEBA FRESH — PROJECT SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BRAND NAME    : Seba Fresh
+WEBSITE       : https://sebafresh.github.io/FreshVeg/
+WHATSAPP      : 6300614017
+GITHUB REPO   : https://github.com/sebafresh/FreshVeg
+FILES         : index.html, app.js
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GOOGLE SHEET — COLUMN NAMES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Add these exact column headers in Row 1 of your Google Sheet:
+
+name            — Product name (Tomato, Potato, Onion etc.)
+category        — Category (Vegetables, Fruits, Leafy, Oils)
+price           — Sale price / discounted price
+mrp             — Original price (crossed out). Leave blank if no discount.
+price_unit      — Unit for pricing (kg, g, L, pcs)
+quantity_type   — weight / volume / pcs
+default_qty     — Starting quantity shown on the card
+default_unit    — Starting unit (g, kg, ml, L, pcs)
+step_qty        — How much each +/- press adds (e.g. 250 for grams)
+min_qty         — Minimum order quantity
+max_qty         — Maximum available stock today (update every morning)
+                  Same unit as default_unit.
+                  Set to 0 for Out of Stock.
+                  Leave blank for unlimited.
+available       — yes / no
+featured        — yes / no (shows in Latest section)
+description     — Short product description
+image1          — First image URL
+image2          — Second image URL (optional)
+image3          — Third image URL (optional)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE ROWS IN YOUR SHEET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tomato
+  price=35, mrp=50, price_unit=kg
+  quantity_type=weight, default_qty=500, default_unit=g
+  step_qty=250, min_qty=250, max_qty=5000
+  available=yes, featured=yes
+
+Cauliflower (sold per piece)
+  price=35, mrp=50, price_unit=pcs
+  quantity_type=pcs, default_qty=1, default_unit=pcs
+  step_qty=1, min_qty=1, max_qty=20
+  available=yes, featured=yes
+
+Cooking Oil
+  price=160, mrp=200, price_unit=L
+  quantity_type=volume, default_qty=1, default_unit=L
+  step_qty=1, min_qty=1, max_qty=10
+  available=yes, featured=yes
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DAILY ROUTINE — EVERY MORNING (2 MINUTES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Open Google Sheet
+2. Update price column if market rate changed
+3. Update max_qty column with today's available stock
+   - Set 0 for anything out of stock today
+   - Leave blank if unlimited stock
+4. Post WhatsApp Status with today's prices
+5. Google Sheet auto-updates the website within minutes
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+UNSPLASH IMAGE LINKS — READY TO USE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tomato     : https://images.unsplash.com/photo-1546470427-e26264be0b11?w=400&q=80
+Onion      : https://images.unsplash.com/photo-1508747703725-719777637510?w=400&q=80
+Potato     : https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80
+Green Chilli: https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=400&q=80
+Cooking Oil: https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&q=80
+Spinach    : https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&q=80
+Cauliflower: https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=400&q=80
+Carrot     : https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80
+Cucumber   : https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&q=80
+Lemon      : https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&q=80
+
+Note: Add ?w=400&q=80 at the end of any Unsplash URL to keep
+file size small and loading fast on mobile.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEBSITE FEATURES BUILT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Product Listing
+  - Product cards with image slider (up to 3 images per product)
+  - Auto-slide every 3 seconds with prev/next arrows and dots
+  - Discount badge (e.g. 30% OFF) with strikethrough MRP
+  - Attractive per-gram price display (e.g. Just Rs.12.50 for 250g)
+  - Smart quantity stepper with +/- buttons and free typing
+  - Unit toggle (g/kg or ml/L) on each product
+  - Min quantity hint and max quantity cap
+  - Out of Stock badge when max_qty = 0
+  - Category filter chips
+  - Search bar
+
+Cart
+  - Slide-in cart drawer
+  - Quantity stepper in cart
+  - Subtotal, delivery charge, total summary
+  - Continue to Delivery Details button scrolls and highlights form
+
+Checkout Form
+  - Name, Mobile number
+  - Delivery Date (default today, past dates blocked)
+  - Red price variation warning for future/advance orders
+  - GPS location sharing with distance and delivery charge
+  - Delivery address and instructions
+
+WhatsApp Order
+  - Complete order message sent to WhatsApp
+  - Includes all items, quantities, prices, total
+  - Delivery date included
+  - Price variation note added for future orders
+  - Google Maps location link included
+
+Other
+  - Dummy products load automatically on localhost for testing
+  - Live Google Sheet loads on GitHub Pages
+  - Topbar WhatsApp link (clickable)
+  - Phone number links (tap to call on mobile)
+  - Image error fallback to vegetable emoji
+  - Mobile responsive design
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GOOGLE SHEET SECURITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Publish to web (CSV) = READ ONLY. No one can edit via URL.
+- Share settings must be: Restricted or Viewer only.
+- Never set General Access to Editor for public.
+- Only your Google account can edit the sheet.
+- The CSV URL in app.js is visible in public code — this is
+  safe because it is already a public read-only export.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GITHUB SECURITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Public repo = anyone can VIEW code, no one can EDIT it.
+- Only you can push changes to main branch.
+- GitHub Pages site only updates when YOU push to main.
+- No passwords or private keys are in the code.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GETTING FIRST ORDER — ACTION PLAN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1 — Today
+  Ask wife / mother / friend to place a real test order.
+  Screenshot the WhatsApp message that is generated.
+
+Step 2 — Tomorrow
+  Send this to your nearest WhatsApp groups:
+  "Fresh vegetables delivered to your door!
+   My neighbour just ordered [show screenshot]
+   Try it: sebafresh.github.io/FreshVeg/
+   Or WhatsApp: 6300614017
+   Free delivery this week for first order"
+
+Step 3 — This Week
+  Talk to 5 neighbours face to face.
+  Ask apartment secretary to share in building group.
+  Post WhatsApp Status every morning 7-8 AM with today's prices.
+
+Step 4 — Every Morning WhatsApp Status Format
+  "Today's Fresh Stock — Seba Fresh
+   Tomato — Rs.35/kg
+   Onion  — Rs.30/kg
+   Potato — Rs.28/kg
+   Order: sebafresh.github.io/FreshVeg/
+   WhatsApp: 6300614017"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VIDEO PROMPTS — PASTE INTO INVIDEO AI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HOW TO USE INVIDEO AI:
+1. Go to invideo.io
+2. Click AI Video → New Video
+3. Paste the prompt below
+4. Select Cinematic style
+5. Select English + Female voiceover
+6. Select 9:16 format
+7. Click Generate
+
+--------------------------------------------------------------
+VIDEO 1 — Green Vegetables (Female Voice)
+--------------------------------------------------------------
+Create a 10-second professional food commercial video.
+FORMAT: 9:16 vertical. BRAND: Seba Fresh. LANGUAGE: English.
+STYLE: Premium food photography. Clean. Minimal. Cinematic.
+COLOR GRADE: Cool fresh tones. Green and white. Natural daylight.
+MUSIC: Soft piano. Light and fresh. Calm and premium.
+
+VISUALS:
+0-2 sec: Fresh drumstick snapped in half slowly.
+Water droplets on surface. Natural daylight. White marble.
+2-4 sec: Bright brinjal sliced in slow motion.
+Seeds visible. Steam rising from cut surface.
+4-6 sec: Fresh coriander leaves dropped on white marble.
+Bitter gourd sliced diagonally. Seeds visible.
+6-8 sec: All vegetables arranged on white marble.
+Drumstick, brinjal, coriander, bitter gourd.
+Camera slowly zooms out.
+8-10 sec: Fade to dark green background. White text:
+Seba Fresh / 6300614017 /
+sebafresh.github.io/FreshVeg/ / Fresh Local Simple
+
+VOICEOVER (female, warm, slow, confident):
+"Fresh from the farm. Straight to your kitchen.
+Order on WhatsApp today.
+Seba Fresh — because fresh matters."
+END CARD: "Seba Fresh. Six three zero zero
+six one four zero one seven. Fresh. Local. Simple."
+
+--------------------------------------------------------------
+VIDEO 2 — Morning Story (Female Voice)
+--------------------------------------------------------------
+Create a 10-second premium food commercial video.
+FORMAT: 9:16 vertical. BRAND: Seba Fresh. LANGUAGE: English.
+STYLE: Cinematic. Emotional. Real kitchen. No cartoons.
+COLOR GRADE: Dark blue at start → warm golden by end.
+MUSIC: Silent first 7 seconds with real kitchen sounds
+→ soft single piano note at end card.
+
+VISUALS:
+0-2 sec: Hands snapping fresh drumstick. Crisp snap sound.
+Dew drops visible. Dawn light. Dark blue tone.
+2-4 sec: Fresh brinjal, raw banana and cluster beans
+placed one by one on clean steel plate.
+Golden light slowly entering frame.
+4-7 sec: All vegetables on white marble.
+Camera slowly pulls back. Golden morning light.
+Text fades in: "This is what fresh looks like."
+7-10 sec: Fade to deep green background. White text:
+Seba Fresh / 6300614017 /
+sebafresh.github.io/FreshVeg/ / Fresh Local Simple
+
+VOICEOVER (female, warm, slow):
+"Fresh vegetables. Every single day.
+Order on WhatsApp — Seba Fresh."
+END CARD: "Seba Fresh.
+Six three zero zero six one four zero one seven.
+Fresh. Local. Simple."
+
+--------------------------------------------------------------
+VIDEO 3 — Chopping (Male Voice)
+--------------------------------------------------------------
+Create a 10-second professional food commercial video.
+FORMAT: 9:16 vertical. BRAND: Seba Fresh. LANGUAGE: English.
+STYLE: Premium food photography. Clean. Minimal. Cinematic.
+COLOR GRADE: Warm golden tones. Wooden board. White marble.
+MUSIC: Soft acoustic guitar. Calm and premium.
+
+VISUALS:
+0-2 sec: Knife slowly slicing ripe red tomato. Slow motion.
+Seeds and juice visible. Warm light. Wooden board.
+2-4 sec: Fresh vegetables on white marble.
+Tomato, onion, carrot, spinach, green chilli.
+Camera slowly pulls back.
+4-6 sec: Water droplets on spinach.
+Knife chops cauliflower slow motion. Florets scatter.
+6-8 sec: All vegetables on wooden board.
+Warm light. Steam rising. Camera holds still.
+8-10 sec: Fade to dark green. White text:
+Seba Fresh / 6300614017 /
+sebafresh.github.io/FreshVeg/ / Fresh Local Simple
+
+VOICEOVER (male, slow, confident):
+"Farm fresh vegetables. Chopped fresh. Delivered fresh.
+Every single day.
+Seba Fresh — WhatsApp us now."
+END CARD: "Seba Fresh.
+Six three zero zero six one four zero one seven.
+Fresh. Local. Simple."
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SOCIAL MEDIA POST CAPTION — COPY PASTE READY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fresh vegetables delivered to your door every day!
+✅ Order online
+✅ Confirm on WhatsApp
+✅ Free delivery within 5 km
+
+Order now: sebafresh.github.io/FreshVeg/
+WhatsApp: 6300614017
+
+#SebaFresh #FreshVegetables #HomeDelivery
+#WhatsAppOrder #OnlineVegetables #Hyderabad
+#FreshVeggies #LocalDelivery #DoorDelivery
+#HealthyFood #FarmFresh
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+END OF SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
